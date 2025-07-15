@@ -1,0 +1,46 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get tag name
+        id: tag
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Read manifest content
+        id: read_manifest
+        run: |
+          echo "content=$(cat manifest.json | jq -c .)" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: Release ${{ steps.tag.outputs.tag }}
+          body: |
+            Release ${{ steps.tag.outputs.tag }}
+            
+            This release includes the toolchain manifest with the following components:
+            - **Trix**: ${{ fromJson(steps.read_manifest.outputs.content)['trix'].min_version }}
+            - **Tx3-LSP**: ${{ fromJson(steps.read_manifest.outputs.content)['tx3-lsp'].min_version }}
+            - **Dolos**: ${{ fromJson(steps.read_manifest.outputs.content)['dolos'].min_version }}
+            - **CShell**: ${{ fromJson(steps.read_manifest.outputs.content)['cshell'].min_version }}
+            
+            ## Assets
+            - `manifest.json` - The complete toolchain manifest file
+          files: |
+            manifest.json
+          draft: false
+          prerelease: false
