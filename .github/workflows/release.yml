@@ -30,16 +30,11 @@ jobs:
           tag_name: ${{ steps.tag.outputs.tag }}
           name: Release ${{ steps.tag.outputs.tag }}
           body: |
-            Release ${{ steps.tag.outputs.tag }}
-            
-            This release includes the toolchain manifest with the following components:
-            - **Trix**: ${{ fromJson(steps.read_manifest.outputs.content)['trix'].min_version }}
-            - **Tx3-LSP**: ${{ fromJson(steps.read_manifest.outputs.content)['tx3-lsp'].min_version }}
-            - **Dolos**: ${{ fromJson(steps.read_manifest.outputs.content)['dolos'].min_version }}
-            - **CShell**: ${{ fromJson(steps.read_manifest.outputs.content)['cshell'].min_version }}
-            
-            ## Assets
-            - `manifest.json` - The complete toolchain manifest file
+            This release includes the toolchain manifest with the following components versions:
+            - **Trix**: `min ${{ fromJson(steps.read_manifest.outputs.content)['tools'][0].min_version }}` / `max ${{ fromJson(steps.read_manifest.outputs.content)['tools'][0].max_version }}`
+            - **LSP**: `min ${{ fromJson(steps.read_manifest.outputs.content)['tools'][1].min_version }}` / `max ${{ fromJson(steps.read_manifest.outputs.content)['tools'][1].max_version }}`
+            - **Dolos**: `min ${{ fromJson(steps.read_manifest.outputs.content)['tools'][2].min_version }}` / `max ${{ fromJson(steps.read_manifest.outputs.content)['tools'][2].max_version }}`
+            - **CShell**: `min ${{ fromJson(steps.read_manifest.outputs.content)['tools'][3].min_version }}` / `max ${{ fromJson(steps.read_manifest.outputs.content)['tools'][3].max_version }}`
           files: |
             manifest.json
           draft: false
