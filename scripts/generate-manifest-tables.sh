@@ -7,10 +7,10 @@ generate_table() {
     
     echo "## $manifest_name"
     echo ""
-    echo "| Tool | Description | Version |"
-    echo "|------|-------------|---------|"
+    echo "| Tool | Version |"
+    echo "|------|---------|"
     
-    jq -r '.tools[] | "| \(.name) | \(.description) | \(.version) |"' "$manifest_file"
+    jq -r '.tools[] | "| \(.name) | \(.version) |"' "$manifest_file"
     echo ""
 }
 
