@@ -5,7 +5,7 @@
       "description": "The tx3 package manager",
       "repo_name": "trix",
       "repo_owner": "tx3-lang",
-      "version": "^0.15"
+      "version": "^0.16"
     },
     {
       "name": "tx3-lsp",
