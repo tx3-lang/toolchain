@@ -1,4 +1,13 @@
 {
+  "self": {
+    "name": "tx3up",
+    "description": "The tx3 version manager",
+    "repo_name": "",
+    "repo_owner": "",
+    "installer": "Instructions",
+    "instructions": "❗️ Go to https://docs.txpipe.io/tx3/install to get the latest version",
+    "version": ">=0.6.1"
+  },
   "tools": [
     {
       "name": "trix",
