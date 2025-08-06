@@ -36,13 +36,6 @@
       "repo_name": "cshell",
       "repo_owner": "txpipe",
       "version": "^0.11"
-    },
-    {
-      "name": "baliusd",
-      "description": "A runtime for off-chain workers",
-      "repo_name": "balius",
-      "repo_owner": "txpipe",
-      "version": "^0.5"
     }
   ]
 }
