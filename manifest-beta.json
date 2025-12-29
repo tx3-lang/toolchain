@@ -11,6 +11,13 @@
   },
   "tools": [
     {
+      "name": "tx3c",
+      "description": "The tx3 compiler",
+      "repo_name": "tx3",
+      "repo_owner": "tx3-lang",
+      "version": "^0.14"
+    },
+    {
       "name": "trix",
       "description": "The tx3 package manager",
       "repo_name": "trix",
