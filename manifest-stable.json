@@ -43,7 +43,7 @@
       "description": "A terminal wallet for Cardano",
       "repo_name": "cshell",
       "repo_owner": "txpipe",
-      "version": "^0.13.1"
+      "version": "^0.13.2"
     }
   ]
 }
