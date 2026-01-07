@@ -6,7 +6,7 @@
     "repo_owner": "",
     "installer": "Instructions",
     "instructions": "❗️ Go to https://docs.txpipe.io/tx3/install to get the latest version",
-    "version": ">=0.6.1",
+    "version": ">=0.7.0",
     "is_global": true
   },
   "tools": [
