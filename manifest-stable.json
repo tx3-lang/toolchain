@@ -6,7 +6,7 @@
     "repo_owner": "",
     "installer": "Instructions",
     "instructions": "❗️ Go to https://docs.txpipe.io/tx3/install to get the latest version",
-    "version": ">=0.6.1",
+    "version": ">=0.7.0",
     "is_global": true
   },
   "tools": [
@@ -22,7 +22,7 @@
       "description": "The tx3 package manager",
       "repo_name": "trix",
       "repo_owner": "tx3-lang",
-      "version": "^0.19.3"
+      "version": "^0.19.5"
     },
     {
       "name": "tx3-lsp",
