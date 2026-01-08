@@ -22,7 +22,7 @@
       "description": "The tx3 package manager",
       "repo_name": "trix",
       "repo_owner": "tx3-lang",
-      "version": "^0.19.5"
+      "version": "^0.19.6"
     },
     {
       "name": "tx3-lsp",
@@ -36,7 +36,7 @@
       "description": "A lightweight Cardano data node",
       "repo_name": "dolos",
       "repo_owner": "txpipe",
-      "version": "1.0.0-rc.4"
+      "version": "1.0.0-rc.5"
     },
     {
       "name": "cshell",
