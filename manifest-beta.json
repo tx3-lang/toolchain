@@ -15,7 +15,7 @@
       "description": "The tx3 compiler",
       "repo_name": "tx3",
       "repo_owner": "tx3-lang",
-      "version": "^0.14.2"
+      "version": "^0.14.3"
     },
     {
       "name": "trix",
