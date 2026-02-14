@@ -22,7 +22,7 @@
       "description": "The tx3 package manager",
       "repo_name": "trix",
       "repo_owner": "tx3-lang",
-      "version": "^0.19.7"
+      "version": "^0.20.0"
     },
     {
       "name": "tx3-lsp",
@@ -43,7 +43,7 @@
       "description": "A terminal wallet for Cardano",
       "repo_name": "cshell",
       "repo_owner": "txpipe",
-      "version": "^0.13.2"
+      "version": "^0.14.0"
     }
   ]
 }
