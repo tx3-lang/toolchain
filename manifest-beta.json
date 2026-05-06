@@ -29,7 +29,7 @@
       "description": "An MCP server exposing the tx3 toolchain to AI agents and editors",
       "repo_name": "tx3-mcp",
       "repo_owner": "tx3-lang",
-      "version": "^0.1"
+      "version": "^0.3"
     },
     {
       "name": "tx3-lsp",
