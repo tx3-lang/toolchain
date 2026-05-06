@@ -36,7 +36,7 @@
       "description": "A lightweight Cardano data node",
       "repo_name": "dolos",
       "repo_owner": "txpipe",
-      "version": "^1.0.2"
+      "version": "^1.1.1"
     },
     {
       "name": "cshell",
