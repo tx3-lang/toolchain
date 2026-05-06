@@ -25,6 +25,13 @@
       "version": "^0.21.1"
     },
     {
+      "name": "tx3-mcp",
+      "description": "An MCP server exposing the tx3 toolchain to AI agents and editors",
+      "repo_name": "tx3-mcp",
+      "repo_owner": "tx3-lang",
+      "version": "^0.1"
+    },
+    {
       "name": "tx3-lsp",
       "description": "A language server for tx3",
       "repo_name": "lsp",
