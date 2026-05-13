@@ -1,0 +1,20 @@
+[submodule "tx3"]
+	path = tx3
+	url = git@github.com:tx3-lang/tx3.git
+	branch = main
+[submodule "trix"]
+	path = trix
+	url = git@github.com:tx3-lang/trix.git
+	branch = main
+[submodule "docs"]
+	path = docs
+	url = git@github.com:tx3-lang/docs.git
+	branch = main
+[submodule "tii"]
+	path = tii
+	url = git@github.com:tx3-lang/tii.git
+	branch = main
+[submodule "trp"]
+	path = trp
+	url = git@github.com:tx3-lang/trp.git
+	branch = main
