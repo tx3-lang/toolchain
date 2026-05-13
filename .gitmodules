@@ -18,3 +18,7 @@
 	path = trp
 	url = git@github.com:tx3-lang/trp.git
 	branch = main
+[submodule "tir"]
+	path = tir
+	url = git@github.com:tx3-lang/tir.git
+	branch = main
