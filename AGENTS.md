@@ -1,6 +1,6 @@
 # lang-factory — agent guide
 
-A thin aggregator of the Tx3 toolkit. Real code lives in seven submodules:
+A thin aggregator of the Tx3 toolkit. Real code lives in the submodules:
 
 - `tx3/` → [`tx3-lang/tx3`](https://github.com/tx3-lang/tx3) — language: parser, analyzer, codegen.
 - `trix/` → [`tx3-lang/trix`](https://github.com/tx3-lang/trix) — `trix` CLI / package manager.
@@ -9,6 +9,10 @@ A thin aggregator of the Tx3 toolkit. Real code lives in seven submodules:
 - `trp/` → [`tx3-lang/trp`](https://github.com/tx3-lang/trp) — Transaction Resolver Protocol spec (OpenRPC).
 - `registry/` → [`tx3-lang/registry`](https://github.com/tx3-lang/registry) — registry of UTxO protocols: Rust backend, TS frontend, on-chain tracker, sample `.tx3` protocol data.
 - `docs/` → [`tx3-lang/docs`](https://github.com/tx3-lang/docs) — public docs.
+
+Plus one grouped subtree (not a submodule itself):
+
+- `sdks/` → the Tx3 SDK fleet: `rust-sdk/`, `web-sdk/`, `go-sdk/`, `python-sdk/` submodules, plus the cross-cutting SDK spec, parity matrix, e2e scripts, and skills. See `sdks/AGENTS.md`.
 
 ## Routing a change
 
@@ -19,10 +23,11 @@ A thin aggregator of the Tx3 toolkit. Real code lives in seven submodules:
 - `trp/` — TRP OpenRPC spec. Spec-only, no source code; protocol-type codegen will be handled at the factory level (planned, not yet built).
 - `registry/` — UTxO protocol registry application. Backend service (Rust, `backend/`), web frontend (TS, `frontend/`), on-chain tracker (`tracker/`), sample protocol files (`data/*.tx3`), and deployment glue (`bootstrap/`, `docker/`, `zot/`).
 - `docs/` — user-facing docs, tutorials, reference, examples.
+- `sdks/` — per-language SDKs (rust/web/go/python) and the fleet's spec, parity matrix, e2e scripts, and skills. `sdks/AGENTS.md` is the entry point for any work here.
 
-If a submodule has its own `AGENTS.md` / `CLAUDE.md` / `README.md`, it overrides this file for work inside that submodule.
+If a submodule (or the `sdks/` subtree) has its own `AGENTS.md` / `CLAUDE.md` / `README.md`, it overrides this file for work inside that path.
 
-Dependency direction for cross-cutting changes is typically `tii` / `trp` / `tir` → `tx3` → `trix` → `docs`. `registry/` is a downstream consumer that exercises `tx3` against real protocol samples; treat it like `docs/` for ordering — bump after the upstream change lands.
+Dependency direction for cross-cutting changes is typically `tii` / `trp` / `tir` → `tx3` → `trix` → `docs`. `registry/` and `sdks/` are downstream consumers that exercise `tx3` against real protocol samples; treat them like `docs/` for ordering — bump after the upstream change lands.
 
 ## Scope of this repo
 

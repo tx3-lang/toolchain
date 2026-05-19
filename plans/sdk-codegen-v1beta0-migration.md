@@ -1,8 +1,8 @@
 # Plan: migrate the SDK bindgen templates to `codegen-v1beta0`
 
 Status: **open / not started — urgent (beta channel already ships the pair)**
-Scope: cross-cutting — four external repos (`tx3-lang/web-sdk`,
-`tx3-lang/rust-sdk`, `tx3-lang/python-sdk`, `tx3-lang/go-sdk`); no change
+Scope: cross-cutting — the four SDK submodules under `sdks/`
+(`sdks/web-sdk`, `sdks/rust-sdk`, `sdks/python-sdk`, `sdks/go-sdk`); no change
 in `trix`/`tx3` (the consuming side already shipped).
 Origin: accepted follow-up from the trix↔tx3c delegation work
 (`trix` 0.22.0, tx3 0.18.0; ADR `trix/design/004-toolchain-delegation.md`).

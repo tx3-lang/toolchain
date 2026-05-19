@@ -30,3 +30,15 @@
 	path = toolchain
 	url = git@github.com:tx3-lang/toolchain.git
 	branch = main
+[submodule "sdks/rust-sdk"]
+	path = sdks/rust-sdk
+	url = git@github.com:tx3-lang/rust-sdk.git
+[submodule "sdks/web-sdk"]
+	path = sdks/web-sdk
+	url = git@github.com:tx3-lang/web-sdk.git
+[submodule "sdks/go-sdk"]
+	path = sdks/go-sdk
+	url = git@github.com:tx3-lang/go-sdk.git
+[submodule "sdks/python-sdk"]
+	path = sdks/python-sdk
+	url = git@github.com:tx3-lang/python-sdk.git
