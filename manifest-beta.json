@@ -15,14 +15,14 @@
       "description": "The tx3 compiler",
       "repo_name": "tx3",
       "repo_owner": "tx3-lang",
-      "version": "^0.16.3"
+      "version": "^0.18.0"
     },
     {
       "name": "trix",
       "description": "The tx3 package manager",
       "repo_name": "trix",
       "repo_owner": "tx3-lang",
-      "version": "^0.21.1"
+      "version": "^0.22.0"
     },
     {
       "name": "tx3-mcp",
