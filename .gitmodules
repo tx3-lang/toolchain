@@ -26,3 +26,7 @@
 	path = registry
 	url = git@github.com:tx3-lang/registry.git
 	branch = main
+[submodule "toolchain"]
+	path = toolchain
+	url = git@github.com:tx3-lang/toolchain.git
+	branch = main
