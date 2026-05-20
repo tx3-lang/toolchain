@@ -1,0 +1,33 @@
+env {
+    tax: Int,
+}
+
+party Sender;
+
+party Receiver;
+
+party Middleman;
+
+tx transfer(
+    quantity: Int
+) {
+    input source {
+        from: Sender,
+        min_amount: Ada(quantity + tax) + fees + min_utxo(change),
+    }
+
+    output {
+        to: Receiver,
+        amount: Ada(quantity),
+    }
+
+    output {
+        to: Middleman,
+        amount: Ada(tax),
+    }
+
+    output change {
+        to: Sender,
+        amount: source - Ada(quantity + tax) - fees,
+    }
+}

@@ -1,0 +1,40 @@
+[submodule "tx3"]
+	path = tx3
+	url = git@github.com:tx3-lang/tx3.git
+	branch = main
+[submodule "trix"]
+	path = trix
+	url = git@github.com:tx3-lang/trix.git
+	branch = main
+[submodule "docs"]
+	path = docs
+	url = git@github.com:tx3-lang/docs.git
+	branch = main
+[submodule "tii"]
+	path = tii
+	url = git@github.com:tx3-lang/tii.git
+	branch = main
+[submodule "trp"]
+	path = trp
+	url = git@github.com:tx3-lang/trp.git
+	branch = main
+[submodule "tir"]
+	path = tir
+	url = git@github.com:tx3-lang/tir.git
+	branch = main
+[submodule "registry"]
+	path = registry
+	url = git@github.com:tx3-lang/registry.git
+	branch = main
+[submodule "sdks/rust-sdk"]
+	path = sdks/rust-sdk
+	url = git@github.com:tx3-lang/rust-sdk.git
+[submodule "sdks/web-sdk"]
+	path = sdks/web-sdk
+	url = git@github.com:tx3-lang/web-sdk.git
+[submodule "sdks/go-sdk"]
+	path = sdks/go-sdk
+	url = git@github.com:tx3-lang/go-sdk.git
+[submodule "sdks/python-sdk"]
+	path = sdks/python-sdk
+	url = git@github.com:tx3-lang/python-sdk.git
