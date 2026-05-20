@@ -1,24 +1,21 @@
 # Testing
 
-Every SDK shipping a codegen plugin MUST ship a **render-fixture test**. Without it, the plugin cannot claim a ✅ in the codegen rows of the [parity matrix](../../parity-matrix.md).
+Every SDK shipping a codegen plugin MUST verify it with a **render-fixture check**. Without it, the plugin cannot claim a ✅ in the codegen rows of the [parity matrix](../../parity-matrix.md).
 
-## Requirements
+The check exercises the plugin templates and `tx3c` — an integration *above* the SDK — not the SDK runtime. It therefore MUST NOT live in the SDK's test suite (no `*_test` source, no unit or e2e test). It is a dedicated `codegen` job in the SDK repo's CI workflow that drives `tx3c` directly from the shell. Any script the job needs is a CI artifact — keep it under `.github/` — never an SDK source or test artifact.
 
-The test MUST:
+## What the check MUST do
 
-1. Invoke `tx3c codegen` as a subprocess, with `--tii` pointing at the shared fixture `sdks/sdk-spec/test-vectors/transfer/transfer.tii` (copy or symlink locally; do NOT generate TII at test time — the compiler is out of scope per [scope.md](../scope.md)), `--template` pointing at the SDK's own `.trix/client-lib/`, and `--output` at a unique temp dir.
+1. Invoke `tx3c codegen`, with `--tii` pointing at a `v1beta0` transfer fixture, `--template` at the SDK's own `.trix/client-lib/`, and `--output` at a scratch directory. Do NOT generate TII at check time — the compiler is out of scope per [scope.md](../scope.md); use a committed fixture.
 2. Assert successful exit and that every expected output file is present.
-3. **Compile or type-check the rendered output** in the target language (`tsc --noEmit`, `cargo check`, `go build`, `pyright`/`mypy`). A successful `tx3c` invocation that produces uncompilable bindings is a failure.
-
-Reference implementation (steps 1–2 only; step 3 not yet present): `sdks/rust-sdk/sdk/tests/codegen.rs`.
-
-## Locating `tx3c`
-
-Resolve in order: `TX3_TX3C_PATH` env var if set, then `tx3c` on `$PATH`. Fail with a clear "install tx3c" message if neither is available — do not silently skip.
+3. **Compile or type-check the rendered output** in the target language (`tsc --noEmit`, `cargo check`, `go build`, a Python import), resolving the runtime SDK from its registry exactly as a consumer would — at the version the generated manifest pins, with no patch/replace/path overrides. A successful `tx3c` invocation that produces uncompilable bindings is a failure.
+4. **Smoke-check the generated surface** — confirm the protocol-identity constants, the per-transaction types, and the profile surface are present — so a template that compiles but drops content is caught.
 
 ## CI gating
 
-The test MUST run on every PR and push, in the SDK's existing unit job. It MAY be deferred to the e2e job if compiling the output requires e2e-only toolchain.
+The check MUST run on every PR and push as a dedicated `codegen` job, parallel to `unit` and `e2e`. It does not need TRP secrets and MUST NOT be gated behind the e2e job.
+
+`tx3c` is provisioned with the `tx3-lang/actions/setup` action. A plugin written against an unreleased `tx3c` feature SHOULD pin the action to the channel that carries it (e.g. `channel: beta`) until it reaches `stable`.
 
 ## Determinism
 

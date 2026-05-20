@@ -12,6 +12,7 @@ The renderer registers a fixed set of helpers in `register_helpers` (`tx3/bin/tx
 
 - **Case converters** — `pascalCase`, `camelCase`, `snakeCase`, `constantCase`, `lowerCase`. Each takes one string and returns the same string in the named case (via the `convert_case` crate).
 - **`schemaTypeFor <schema> <language>`** — maps a JSON Schema node to a language-native type name. Recognized languages: `rust`, `typescript`, `python`, `go`. The full mapping (primitives, arrays, objects with `additionalProperties`, named `$ref`s like `Bytes`/`Address`/`UtxoRef`/`AnyAsset`) is defined in the same file — do not duplicate it in templates; rely on the helper.
+- **`json <value>`** — serializes any TII node (object, array, or scalar) to a compact JSON string. Use it to embed structured data such as `tii.profiles` and `tii.environment`; plain `{{...}}` interpolation renders a JSON object as the literal `[object]`. Always invoke it triple-stashed (`{{{json ...}}}`) so the quotes are not HTML-escaped.
 
 A plugin that needs a type mapping the helper doesn't cover MUST request the addition upstream rather than hand-rolling per-language logic in the template.
 

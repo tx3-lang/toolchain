@@ -63,10 +63,6 @@ Profiles and environment are **not** optional metadata; they are how a generated
 
 ## Known drift
 
-At the time this spec landed:
+All four first-party plugins target the `v1beta0` data shape and satisfy the per-transaction, top-level facade, protocol-identity, and profiles/environment requirements above. The remaining gap is plugin tagging: the Go and Python plugins have been ported but still need their immutable `codegen-v1beta0` tags cut (see [versioning.md](versioning.md) and [plugin-layout.md](plugin-layout.md)).
 
-- TypeScript and Rust plugins target the current `v1beta0` data shape; Python and Go still render against the legacy `bindgen-v1alpha2` shape and must be ported.
-- **No plugin currently meets the profiles/environment MUST in full.** Rust emits a `profiles()` function returning a JSON value but does not wire it into a facade. TypeScript emits no profile data. Python/Go embed a flat `DefaultTRPEndpoint`/`DefaultEnvArgs` derived from the legacy data context — that's a partial step toward the requirement but not the per-profile structure this spec mandates.
-- No plugin currently emits a target-TII-version constant per *Protocol identity*.
-
-All gaps are tracked in the [parity matrix](../../parity-matrix.md).
+Status is tracked in the [parity matrix](../../parity-matrix.md).

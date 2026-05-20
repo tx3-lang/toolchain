@@ -11,7 +11,7 @@
 | ❌     | Not implemented. |
 | —      | Not applicable to this SDK (must be justified in notes). |
 
-**Snapshot date:** 2026-04-27. Update this date whenever you re-audit.
+**Snapshot date:** 2026-05-20. Update this date whenever you re-audit.
 
 ---
 
@@ -47,13 +47,13 @@ Capability references are to `sdk-spec/codegen/`. Codegen is an **optional** SDK
 | # | Capability | `rust-sdk` | `web-sdk` | `go-sdk` | `python-sdk` | Notes |
 |---|---|---|---|---|---|---|
 | C.1 | `.trix/client-lib/` template set present | ✅ [`rust-sdk/.trix/client-lib/`](../rust-sdk/.trix/client-lib/) | ✅ [`web-sdk/.trix/client-lib/`](../web-sdk/.trix/client-lib/) | ✅ [`go-sdk/.trix/client-lib/`](../go-sdk/.trix/client-lib/) | ✅ [`python-sdk/.trix/client-lib/`](../python-sdk/.trix/client-lib/) | All four SDKs ship a plugin at the canonical convention path. |
-| C.2 | Targets current TII version (`v1beta0`) | ✅ | ✅ | 🚧 templates still on legacy `bindgen-v1alpha2` data shape | 🚧 templates still on legacy `bindgen-v1alpha2` data shape | Rust/Web use `tii.transactions` + `schemaTypeFor`; Go/Python use flat `transactions` + `typeFor`. |
-| C.3a | Per-tx `Params` + `TIR` constant + facade method | ✅ | ✅ | 🚧 needs C.2 port | 🚧 needs C.2 port | Core per-transaction surface. |
-| C.3b | Protocol identity constants (name, version, target TII version) | 🚧 emits name+version, missing TII version | 🚧 missing | ❌ | ❌ | [generated-surface.md §Protocol identity](sdk-spec/codegen/generated-surface.md). |
-| C.3c | Profiles + environment embedded + wired into facade | 🚧 emits `profiles()` but no facade wiring | ❌ | 🚧 partial via `Default*` constants | 🚧 partial via `Default*` constants | [generated-surface.md §Profiles and environment](sdk-spec/codegen/generated-surface.md). No plugin fully complies. |
+| C.2 | Targets current TII version (`v1beta0`) | ✅ | ✅ | ✅ | ✅ | All four templates render against the `v1beta0` `tii.*` data shape via `schemaTypeFor`. |
+| C.3a | Per-tx `Params` + `TIR` constant + facade method | ✅ | ✅ | ✅ | ✅ | All four emit a `Params` type, a TIR constant, and a `Client` transaction method. |
+| C.3b | Protocol identity constants (name, version, target TII version) | ✅ | ✅ | ✅ | ✅ | All four emit protocol name, version, and `TARGET_TII_VERSION`. [generated-surface.md §Protocol identity](sdk-spec/codegen/generated-surface.md). |
+| C.3c | Profiles + environment embedded + wired into facade | ✅ | ✅ | ✅ | ✅ | All four embed `PROFILES` + environment schema and accept a profile selector on the `Client`. [generated-surface.md §Profiles and environment](sdk-spec/codegen/generated-surface.md). |
 | C.3d | No runtime `Protocol.fromFile` from generated code | ✅ | ✅ | ✅ | ✅ | Embedding-only constraint; all current plugins satisfy by construction. |
-| C.4 | Plugin tag immutability + `codegen-v<TII>` naming | ✅ `codegen-v1beta0` | ✅ `codegen-v1beta0` | 🚧 | 🚧 | Tag policy defined in [codegen/plugin-layout.md](sdk-spec/codegen/plugin-layout.md). |
-| C.5 | Render-fixture test ([testing.md](sdk-spec/codegen/testing.md)) | 🚧 [`rust-sdk/sdk/tests/codegen.rs`](../rust-sdk/sdk/tests/codegen.rs) — runs `tx3c codegen` but does not compile output | ❌ | ❌ | ❌ | Reference pattern exists; needs compile-of-output step and replication. |
+| C.4 | Plugin tag immutability + `codegen-v<TII>` naming | ✅ `codegen-v1beta0` | ✅ `codegen-v1beta0` | ✅ `codegen-v1beta0` | ✅ `codegen-v1beta0` | All four tags point at the merged v1beta0 templates. Tag policy in [codegen/plugin-layout.md](sdk-spec/codegen/plugin-layout.md). |
+| C.5 | Render-fixture check ([testing.md](sdk-spec/codegen/testing.md)) | ✅ [`rust-sdk/.github/scripts/codegen-check.sh`](../rust-sdk/.github/scripts/codegen-check.sh) | ✅ [`web-sdk/.github/scripts/codegen-check.sh`](../web-sdk/.github/scripts/codegen-check.sh) | ✅ [`go-sdk/.github/scripts/codegen-check.sh`](../go-sdk/.github/scripts/codegen-check.sh) | ✅ [`python-sdk/.github/scripts/codegen-check.sh`](../python-sdk/.github/scripts/codegen-check.sh) | A CI-owned shell script run by a dedicated `codegen` job: renders the shared fixture, compiles/type-checks the output, and smoke-checks the generated surface. Not SDK test code. |
 
 ---
 
