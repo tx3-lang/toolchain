@@ -37,6 +37,10 @@ The currently-most-complete reference implementation is `rust-sdk/` (v0.9.2). Wh
 - [CI Workflow Policy](testing/ci-workflows.md) — required unified CI workflow semantics
 - [Documentation Requirements](documentation/) — README template, docstring strategy
 
+### Codegen (optional capability)
+
+- [Codegen Plugin Contract](codegen/) — what an SDK's `.trix/client-lib/` template set must look like, what it consumes, and what it must emit
+
 ### Shared Fixtures
 
 - [Test Vectors](test-vectors/) — canonical shared vectors (`.tx3`, `.tii`, `.env`) used by SDK e2e tests

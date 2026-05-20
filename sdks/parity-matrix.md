@@ -40,6 +40,23 @@ Capability references are to `sdk-spec/api-surface/`.
 
 ---
 
+## Codegen plugin parity
+
+Capability references are to `sdk-spec/codegen/`. Codegen is an **optional** SDK capability; an `—` here means the SDK has not opted in and is not required to.
+
+| # | Capability | `rust-sdk` | `web-sdk` | `go-sdk` | `python-sdk` | Notes |
+|---|---|---|---|---|---|---|
+| C.1 | `.trix/client-lib/` template set present | ✅ [`rust-sdk/.trix/client-lib/`](../rust-sdk/.trix/client-lib/) | ✅ [`web-sdk/.trix/client-lib/`](../web-sdk/.trix/client-lib/) | ✅ [`go-sdk/.trix/client-lib/`](../go-sdk/.trix/client-lib/) | ✅ [`python-sdk/.trix/client-lib/`](../python-sdk/.trix/client-lib/) | All four SDKs ship a plugin at the canonical convention path. |
+| C.2 | Targets current TII version (`v1beta0`) | ✅ | ✅ | 🚧 templates still on legacy `bindgen-v1alpha2` data shape | 🚧 templates still on legacy `bindgen-v1alpha2` data shape | Rust/Web use `tii.transactions` + `schemaTypeFor`; Go/Python use flat `transactions` + `typeFor`. |
+| C.3a | Per-tx `Params` + `TIR` constant + facade method | ✅ | ✅ | 🚧 needs C.2 port | 🚧 needs C.2 port | Core per-transaction surface. |
+| C.3b | Protocol identity constants (name, version, target TII version) | 🚧 emits name+version, missing TII version | 🚧 missing | ❌ | ❌ | [generated-surface.md §Protocol identity](sdk-spec/codegen/generated-surface.md). |
+| C.3c | Profiles + environment embedded + wired into facade | 🚧 emits `profiles()` but no facade wiring | ❌ | 🚧 partial via `Default*` constants | 🚧 partial via `Default*` constants | [generated-surface.md §Profiles and environment](sdk-spec/codegen/generated-surface.md). No plugin fully complies. |
+| C.3d | No runtime `Protocol.fromFile` from generated code | ✅ | ✅ | ✅ | ✅ | Embedding-only constraint; all current plugins satisfy by construction. |
+| C.4 | Plugin tag immutability + `codegen-v<TII>` naming | ✅ `codegen-v1beta0` | ✅ `codegen-v1beta0` | 🚧 | 🚧 | Tag policy defined in [codegen/plugin-layout.md](sdk-spec/codegen/plugin-layout.md). |
+| C.5 | Render-fixture test ([testing.md](sdk-spec/codegen/testing.md)) | 🚧 [`rust-sdk/sdk/tests/codegen.rs`](../rust-sdk/sdk/tests/codegen.rs) — runs `tx3c codegen` but does not compile output | ❌ | ❌ | ❌ | Reference pattern exists; needs compile-of-output step and replication. |
+
+---
+
 ## Cross-cutting policy parity
 
 | Policy capability | `rust-sdk` | `web-sdk` | `go-sdk` | `python-sdk` | Notes |
@@ -70,7 +87,7 @@ All §3 required capabilities are now implemented. The v1.0.0 rewrite (branch `s
 - **Top-level + subpath re-exports** (`tx3-sdk`, `tx3-sdk/trp`, `tx3-sdk/tii`, `tx3-sdk/signer`).
 - **CIP-30 signer** (`Cip30Signer`, `cip30Party(api)`) shipped from `tx3-sdk/signer` alongside `CardanoSigner` / `Ed25519Signer`. Backed by [`cborg`](https://www.npmjs.com/package/cborg) for witness-set decoding. Single-key wallets only; multi-key wallets call `decodeWitnessSet` directly and attach each via `addWitness`.
 
-Build-time codegen (via `vite-plugin-tx3`, `rollup-plugin-tx3`, `next-tx3`) remains orthogonal and unchanged.
+Build-time codegen integrations (`vite-plugin-tx3`, `rollup-plugin-tx3`, `next-tx3`) drive the `.trix/client-lib/` plugin from a bundler. The plugin contract itself is now spec'd under [sdk-spec/codegen/](sdk-spec/codegen/); the web-sdk plugin is already on `codegen-v1beta0`.
 
 ### `python-sdk` (`tx3-sdk` v1.0.0)
 

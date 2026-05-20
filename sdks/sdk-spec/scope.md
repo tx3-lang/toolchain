@@ -23,7 +23,7 @@ Everything else — wallet UI, fee estimation outside TRP, chain indexing, key s
 
 ## Optional Surface (MAY)
 
-- **Build-time codegen / plugins** (Web SDK does this today via `vite-plugin-tx3`, `rollup-plugin-tx3`, `next-tx3`). These are *additions*, never substitutes, for the runtime surface in the [API surface](api-surface/) section.
+- **Codegen plugins** — per-language template sets that emit typed bindings from a `.tii` artifact. See [codegen/](codegen/) for the plugin contract. The Web SDK additionally ships build-tool integrations (`vite-plugin-tx3`, `rollup-plugin-tx3`, `next-tx3`) that drive the plugin from a bundler. Plugins and integrations are *additions*, never substitutes, for the runtime surface in the [API surface](api-surface/) section.
 - **Framework integrations** (Next.js, React hooks, Actix/Axum middleware).
 - **CLI scaffolders** (e.g. `install-tx3-nextjs`).
 - **Test helpers** (fake TRP server, deterministic signer, protocol fixtures).
