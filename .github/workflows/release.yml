@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'manifest-*.json'
+      - 'scripts/**'
+      - '.github/workflows/release.yml'
 
 permissions:
   contents: write
