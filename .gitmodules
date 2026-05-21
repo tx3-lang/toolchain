@@ -1,9 +1,9 @@
 [submodule "tx3"]
-	path = tx3
+	path = lang/tx3
 	url = git@github.com:tx3-lang/tx3.git
 	branch = main
 [submodule "trix"]
-	path = trix
+	path = tooling/trix
 	url = git@github.com:tx3-lang/trix.git
 	branch = main
 [submodule "docs"]
@@ -11,15 +11,15 @@
 	url = git@github.com:tx3-lang/docs.git
 	branch = main
 [submodule "tii"]
-	path = tii
+	path = core/tii
 	url = git@github.com:tx3-lang/tii.git
 	branch = main
 [submodule "trp"]
-	path = trp
+	path = core/trp
 	url = git@github.com:tx3-lang/trp.git
 	branch = main
 [submodule "tir"]
-	path = tir
+	path = core/tir
 	url = git@github.com:tx3-lang/tir.git
 	branch = main
 [submodule "registry"]
@@ -38,3 +38,39 @@
 [submodule "sdks/python-sdk"]
 	path = sdks/python-sdk
 	url = git@github.com:tx3-lang/python-sdk.git
+[submodule "tooling/tx3up"]
+	path = tooling/tx3up
+	url = git@github.com:tx3-lang/tx3up.git
+	branch = main
+[submodule "tooling/tx3-lsp"]
+	path = tooling/tx3-lsp
+	url = git@github.com:tx3-lang/tx3-lsp.git
+	branch = main
+[submodule "tooling/tx3-mcp"]
+	path = tooling/tx3-mcp
+	url = git@github.com:tx3-lang/tx3-mcp.git
+	branch = main
+[submodule "plugins/vscode-tx3"]
+	path = plugins/vscode-tx3
+	url = git@github.com:tx3-lang/vscode-tx3.git
+	branch = main
+[submodule "plugins/actions"]
+	path = plugins/actions
+	url = git@github.com:tx3-lang/actions.git
+	branch = main
+[submodule "plugins/tx3-skills"]
+	path = plugins/tx3-skills
+	url = git@github.com:tx3-lang/tx3-skills.git
+	branch = main
+[submodule "tooling/tx3-lift"]
+	path = tooling/tx3-lift
+	url = git@github.com:tx3-lang/tx3-lift.git
+	branch = main
+[submodule "backends/protocol-gateway"]
+	path = backends/protocol-gateway
+	url = git@github.com:tx3-lang/protocol-gateway.git
+	branch = main
+[submodule "backends/tx3-hydra"]
+	path = backends/tx3-hydra
+	url = git@github.com:tx3-lang/tx3-hydra.git
+	branch = main

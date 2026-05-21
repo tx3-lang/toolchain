@@ -27,7 +27,7 @@
     {
       "name": "tx3-lsp",
       "description": "A language server for tx3",
-      "repo_name": "lsp",
+      "repo_name": "tx3-lsp",
       "repo_owner": "tx3-lang",
       "version": "^0"
     },
