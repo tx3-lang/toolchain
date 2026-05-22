@@ -64,6 +64,7 @@ documented in `skills/<name>/SKILL.md` with:
 Available skills:
 
 - `skills/channel-version-update/` — update toolchain component versions by checking GitHub releases and updating the manifest files.
+- `skills/publish-docs-site/` — publish the latest Tx3 docs to the company-wide docs site (`docs.txpipe.io`) by triggering the `txpipe/docs` `update-submodules` workflow.
 - `sdks/skills/` — SDK-fleet skills (`add-sdk-feature`, `audit-parity`, `propagate-change`, `release-synced`, `release-sdk-patch`, `run-e2e-tests`, `scaffold-new-sdk`).
 
 ## Scope of this repo
