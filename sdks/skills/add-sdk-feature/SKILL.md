@@ -56,6 +56,7 @@ From the user (ask if missing):
 
 - **Spec-first, always.** Writing code before the spec is how glossaries fracture. If the user pushes back on this, explain that the spec is a contract with future contributors, not paperwork.
 - **Same name everywhere.** The whole point of the spec is that `wait_for_confirmed` / `waitForConfirmed` / `WaitForConfirmed` are the same thing. Never negotiate names per-SDK.
+- **One client surface per SDK.** Features extend the existing `Tx3Client` — its constructors, methods, or builder chain. Never introduce a parallel client type ("ProtocolClient", "CodegenClient", etc.) to host new state; the spec mandates exactly one client per SDK ([api-surface/facade.md §3.3](../../sdk-spec/api-surface/facade.md)). If the feature adds lookup-style methods, they MUST return the language's recoverable-error shape (`Result` / `Either` / typed exception), not panic/throw on miss ([errors.md §3.8](../../sdk-spec/api-surface/errors.md)).
 - **No partial fleets.** If you can only land the capability in one SDK this session, say so explicitly and log the gap in the parity matrix. Don't silently ship one and forget the others.
 - **Idiomatic translation, not mechanical translation.** A Rust `Arc<dyn Signer>` should become a TypeScript `interface Signer` with structural typing, not a hand-rolled `ArcSignerBox` class.
 - **Keep the §3 bar high.** If a capability could live in §4 or §5, prefer that. §3 is "every SDK MUST have this"; additions there impose real cost on every maintainer.

@@ -22,10 +22,16 @@ None required. Optional: a specific capability to focus on (e.g. "only audit §3
 1. **Load the spec.** Read `sdks/sdk-spec/api-surface/` and `sdks/sdk-spec/scope.md`. The API surface files define the rows you're auditing; the compliance checklist in `scope.md` is the pass/fail bar.
 2. **List the SDKs.** Read `AGENTS.md` for the current inventory. For each SDK folder, note its language, package name, and version from its own manifest (`Cargo.toml`, `package.json`).
 3. **For each SDK, for each capability in §3, verify by reading source.** Do not trust the existing matrix cell.
-   - Find the symbol: grep for the concept name (e.g. `Tx3Client`, `CardanoSigner`, `waitForConfirmed`, `checkStatus`).
+   - Find the symbol: grep for the concept name (e.g. `Tx3Client`, `fromParts`, `Profile`, `ClientOptions`, `CardanoSigner`, `waitForConfirmed`, `checkStatus`).
    - Open the file and confirm the capability is actually implemented, not just named.
    - Check it's reachable from the SDK's public entry point (`lib.rs`, `src/index.ts`, etc.). A capability buried in a private module doesn't count.
    - Note the exact file path for ✅ entries.
+   - Flag known drift patterns in Notes:
+     - A parallel client type alongside `Tx3Client` (anything like `ProtocolClient` / `CodegenClient` / `DynamicClient` splits the surface; the spec mandates one client per SDK).
+     - A constructor taking a bare endpoint string instead of `ClientOptions` (drops auth-header support; see [trp.md](../../sdk-spec/api-surface/trp.md)).
+     - Only a single client constructor — `Tx3Client.new(protocol, trpClient)` — with no parts-based `fromParts(transactions, profiles, knownParties, trpClient)` companion, so generated codegen clients have nowhere to land their embedded data ([facade.md §3.3](../../sdk-spec/api-surface/facade.md)).
+     - `withProfile` / `withParty` / `tx` panicking or throwing on a missing name instead of returning a recoverable `UnknownProfile` / `UnknownParty` / `UnknownTx` ([errors.md §3.8](../../sdk-spec/api-surface/errors.md)).
+     - A codegen-generated `Client` that re-implements client state or lifecycle logic instead of wrapping the SDK's `Tx3Client` ([codegen/generated-surface.md](../../sdk-spec/codegen/generated-surface.md)).
 4. **Check the optional surface (§4 top-level re-exports).** This is often where SDKs drift — an internal symbol exists but isn't exported.
 5. **Update `sdks/parity-matrix.md`:**
    - Flip cells to match reality. ✅ / 🚧 / ❌.

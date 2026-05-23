@@ -26,18 +26,25 @@ The embedded constants are the entire carry-forward from TII; once codegen runs,
 For every entry in `tii.transactions`, the bindings MUST expose:
 
 1. **A `Params` type** — a named record whose fields correspond 1:1 to `params.properties`, with field types resolved via `schemaTypeFor` (see [renderer-contract.md](renderer-contract.md)). The shape MUST be discoverable and type-checked by the host language's tooling.
-2. **A `TIR` constant** — an embedding of `tii.transactions.<name>.tir` (verbatim `content`, `encoding`, `version`). Consumers pass this to the runtime SDK's TRP `resolve`.
-3. **A transaction method** — async, named after the transaction (idiomatic case), taking a `Params` value and delegating to the runtime SDK's TRP `resolve` with the corresponding `TIR` constant.
+2. **A `TIR` accessor** — a value or function exposing `tii.transactions.<name>.tir` (verbatim `content`, `encoding`, `version`). The transactions map passed to the SDK facade's parts-based constructor is built from these accessors at runtime in `Client.new` (see *Top-level facade* below).
+3. **A typed transaction method on the wrapper** — named after the transaction (idiomatic case), taking a `Params` value, delegating to the wrapped client's `tx(name)`, and applying the typed args. Returns the SDK's `TxBuilder`; the caller drives `.resolve() → .sign() → .submit() → .wait*()` from there.
+
+The typed method MUST NOT inline the TIR or branch on tx name internally — it delegates to the wrapped facade client, which already owns the embedded transactions map.
 
 ## Top-level facade (MUST)
 
-A single entry point (typically `Client`) that:
+The generated `Client` MUST be a thin **wrapper around the runtime SDK's facade client** (`Tx3Client` per [api-surface/facade.md §3.3](../api-surface/facade.md)) — typically a newtype / struct embedding / composition, depending on host language idioms. The wrapper:
 
-- Accepts the runtime SDK's TRP client options (or wraps an existing TRP client).
-- Exposes one transaction method per `tii.transactions` entry.
-- Exposes a `submit` operation delegating to the runtime SDK's TRP `submit`.
+- Constructs the inner client via its parts-based constructor (`Tx3Client.fromParts(transactions, profiles, knownParties, trpClient)`), supplying the values the template embedded at codegen time.
+- Accepts the runtime SDK's `ClientOptions` at construction (endpoint + optional auth headers — see [api-surface/trp.md](../api-surface/trp.md)). It MUST NOT narrow to a bare endpoint string.
+- Delegates `withProfile(name)`, `withParty(name, party)`, and the rest of the lifecycle surface straight through to the inner client.
+- Adds one typed per-transaction method per `tii.transactions` entry (see *Per-transaction* above).
 
-The facade MUST be a thin pass-through. Parties, signers, wait-modes, and error hierarchy live in the runtime SDK ([api-surface/](../api-surface/)) and MUST NOT be re-implemented here.
+The wrapper MUST NOT re-implement state the SDK already owns. Parties, signers, profile selection, env folding, the resolve/sign/submit/wait chain, party-address injection, and the error hierarchy ([api-surface/](../api-surface/)) all live in the runtime SDK and MUST be delegated to. The only code unique to the generated wrapper is the typed shape of per-transaction methods and per-transaction params, the embedded data, and three short delegating methods (`new` / `withProfile` / `withParty`).
+
+### Error handling in the wrapper
+
+Where the SDK facade returns recoverable errors on name lookups ([api-surface/errors.md](../api-surface/errors.md)), the wrapper MAY collapse those into the host language's invariant-violation mechanism (`unwrap`/`panic` in Rust, `throw` of an assertion-style error in TS/Python, etc.). In the codegen flow the embedded protocol is the contract: the embedded transactions, profiles, and parties are by construction the only valid names, so a lookup miss indicates the caller passed a name outside the codegen-declared set — a programmer error, not a recoverable case. Wrappers MUST NOT collapse errors from `resolve` / `sign` / `submit` / `wait*` — those are real runtime failures and MUST surface as the SDK's normal error types.
 
 ## Protocol identity (MUST)
 
@@ -47,11 +54,9 @@ Bindings MUST emit constants for `tii.protocol.{name,version}` and the target TI
 
 Bindings MUST embed `tii.profiles` and `tii.environment` so consumers can instantiate the facade against a named profile without supplying a `.tii` file at runtime. The minimum surface:
 
-- **Per-profile constant** — for each entry in `tii.profiles`, a named, addressable value containing that profile's `environment` and `parties` payload (verbatim from TII).
+- **Embedded profile data** — the `environment` and `parties` payload of every `tii.profiles` entry MUST be statically present in the generated output. The template SHOULD embed `tii.profiles` as a JSON string constant and delegate parsing to a runtime SDK function (`Profile.loadAll(json)` per [api-surface/facade.md](../api-surface/facade.md)); per-profile struct literals are also compliant. **Parsers MUST live in the SDK runtime, not in the template** — when a new protocol-data shape is added, the SDK gains a parser method and templates only embed the raw JSON.
 - **Environment schema** — when `tii.environment` is present, a constant or type derived from it. Plugins MAY emit it as a typed struct (using `schemaTypeFor`) or as the raw schema object; either is compliant as long as consumers can introspect or validate against it.
-- **Facade integration** — the top-level `Client` MUST accept a profile selector (by name) and apply the corresponding environment + parties at construction time. The shape of the selector (string argument, builder method, constructor overload) is idiomatic.
-
-The shape of the per-profile constant (struct, map literal, JSON value, dataclass) MAY be whatever is idiomatic for the language. What matters is that the data is statically present in the generated output and reachable through the facade.
+- **Facade integration** — the wrapper MUST accept a profile selector (by name) and apply the corresponding environment + parties through the wrapped client's `withProfile`. The shape of the selector (string argument, builder method, constructor overload) is idiomatic.
 
 Profiles and environment are **not** optional metadata; they are how a generated `Client` knows *where* to send transactions. Without them, the generated facade is incomplete — the consumer would have to hand-supply TRP endpoints and party addresses that the TII already declares.
 
@@ -59,7 +64,8 @@ Profiles and environment are **not** optional metadata; they are how a generated
 
 - **No raw TII passthrough.** Consumers MUST NOT receive the TII JSON as an opaque blob.
 - **No third-party runtime dependencies.** Only the host SDK and the language's standard library.
-- **No business logic.** Retry, signing, party management belong in the runtime SDK.
+- **No client state or lifecycle logic.** TRP client construction, party storage, profile selection, env/party merging, the resolve/sign/submit/wait chain — all live in the runtime SDK. The wrapper composes the SDK's facade client and adds only the typed per-protocol surface (params, transaction methods, embedded data).
+- **No parsers.** Templates embed protocol data verbatim and delegate decoding to SDK functions (`Profile.loadAll`, etc.). Shape-decoding logic that would live identically across every generated client belongs in the SDK.
 
 ## Known drift
 

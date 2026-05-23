@@ -40,9 +40,9 @@ From the user (ask if missing):
    ├── LICENSE                # Apache-2.0 (match rust-sdk / web-sdk)
    ├── src/ (or pkg/, Sources/)
    │   ├── <entry point>      # Re-exports per spec §4
-   │   ├── trp/               # Low-level TRP client (§3.2)
+   │   ├── trp/               # Low-level TRP client + ClientOptions shape (§3.2)
    │   ├── tii/               # Protocol loader (§3.1)
-   │   ├── facade/            # Tx3Client + builder chain (§3.3)
+   │   ├── facade/            # Tx3Client (both `new(protocol, ...)` and parts-based `fromParts(...)` constructors), TxBuilder, Profile (§3.3)
    │   └── signer/            # Signer interface + CardanoSigner + Ed25519Signer (§3.5)
     ├── tests/                 # End-to-end tests + shared fixtures (unit tests may be co-located)
    └── examples/              # Copy transfer.tx3 + transfer.tii from rust-sdk
@@ -52,7 +52,9 @@ From the user (ask if missing):
    - Has the canonical name from the glossary, translated to the language's casing.
    - Has a docstring matching the spec subsection verbatim (paraphrase the rationale, quote the MUST requirements).
    - Throws / returns a `NotImplementedError` equivalent.
-    - Has unit coverage in the language-idiomatic location (co-located or `tests/`) and is marked skipped (`pytest.skip`, `t.Skip(...)`, etc.) until implemented.
+   - Has unit coverage in the language-idiomatic location (co-located or `tests/`) and is marked skipped (`pytest.skip`, `t.Skip(...)`, etc.) until implemented.
+   - For the facade ([§3.3](../../sdk-spec/api-surface/facade.md)): stubs the deconstructed-parts model — `Tx3Client` holds the protocol's transactions / profiles / known-parties locally, with both `new(protocol, trpClient)` (deconstruct a loaded `Protocol`, drop it) and the parts-based `fromParts(transactions, profiles, knownParties, trpClient)` (codegen entry point). Any constructor taking TRP settings accepts `ClientOptions`, never a bare endpoint string.
+   - For name-lookup methods (`withProfile`, `withParty`, `tx`): the stub return type MUST be the language's recoverable-error shape — `Result` / `Either` / typed exception — even before the implementation lands, so the API contract doesn't drift later ([errors.md §3.8](../../sdk-spec/api-surface/errors.md)).
 5. **Copy the TII example.** Put `rust-sdk/examples/transfer.tii` and `transfer.tx3` under the new SDK's `examples/` so the very first test target is "load this file with `Protocol.fromFile` and assert it parses".
 6. **Add an `AGENTS.md` entry.** Edit the inventory table in `/AGENTS.md` to include the new SDK row (version 0.0.0, "skeleton").
 7. **Seed the parity matrix.** Add a column for the new SDK in `sdks/parity-matrix.md`. All cells start as ❌ except §3.1 (the TII example should at minimum be parseable once the stub is filled in). Add a per-SDK summary section describing the state and the recommended implementation order (3.2 TRP → 3.1 TII → 3.5 signers → 3.3 facade → 3.7 wait modes).

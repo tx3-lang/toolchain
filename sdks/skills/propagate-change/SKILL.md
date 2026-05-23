@@ -48,6 +48,7 @@ If the user doesn't provide any of these, ask for them before proceeding. Don't 
 
 - **Idiomatic first.** If the source uses a consuming `self`-builder and the target language doesn't have ownership semantics, adapt. Don't mechanically translate.
 - **Naming parity, not shape parity.** Step names (`resolve`, `sign`, `submit`, `waitForConfirmed`) are fixed. Argument lists, types, and return shapes are free to change.
+- **Error semantics ARE parity-bound.** If the source method returns a recoverable error on a name lookup (`UnknownProfile`, `UnknownParty`, `UnknownTx`) or any other input-driven failure, the port MUST too — `Result<_, Error>` in Rust becomes `Either` / typed exception / multi-return in other languages. Don't downgrade to panic/throw because the source had an unwrapping wrapper; the wrapper is a codegen-layer concern ([errors.md §3.8](../../sdk-spec/api-surface/errors.md)), not the underlying API's contract.
 - **Don't broaden scope.** If the source change only added `Ed25519Signer::from_hex`, don't also refactor the signer module in the target. One change, ported.
 - **Block on prerequisites, don't fake them.** If you need `checkStatus` to port `waitForConfirmed` and the target SDK doesn't have it yet, say so and stop.
 - **Use the repo commit convention.** Every commit follows Conventional Commits 1.0.0 (the `lang-factory` repo-wide convention; see `sdks/AGENTS.md` for the per-SDK vs wrapper scope vocabulary). The source commit message is *not* propagated verbatim; each target SDK gets its own commit written to that convention.

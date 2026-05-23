@@ -8,7 +8,9 @@ The check exercises the plugin templates and `tx3c` — an integration *above* t
 
 1. Invoke `tx3c codegen`, with `--tii` pointing at a `v1beta0` transfer fixture, `--template` at the SDK's own `.trix/client-lib/`, and `--output` at a scratch directory. Do NOT generate TII at check time — the compiler is out of scope per [scope.md](../scope.md); use a committed fixture.
 2. Assert successful exit and that every expected output file is present.
-3. **Compile or type-check the rendered output** in the target language (`tsc --noEmit`, `cargo check`, `go build`, a Python import), resolving the runtime SDK from its registry exactly as a consumer would — at the version the generated manifest pins, with no patch/replace/path overrides. A successful `tx3c` invocation that produces uncompilable bindings is a failure.
+3. **Compile or type-check the rendered output** in the target language (`tsc --noEmit`, `cargo check`, `go build`, a Python import). The rendered crate/package MUST be built against the runtime SDK **in the same checkout** — Cargo `[patch.crates-io]`, npm workspaces / `npm link`, Python editable install (`pip install -e`), or the language's equivalent. A PR that lands SDK and template changes in lockstep is thus verified against itself; the published-registry version (which may lag the source) is not what's under test on a PR. A successful `tx3c` invocation that produces uncompilable bindings is a failure.
+
+   A separate registry-fidelity job (compiling against the package published to the language registry at the version the manifest pins, with no overrides) is RECOMMENDED at release time or as a post-merge job, but is not on the PR-CI path: on a PR that advances the template ahead of a release, registry resolution is structurally impossible because the SDK version it needs is not yet published.
 4. **Smoke-check the generated surface** — confirm the protocol-identity constants, the per-transaction types, and the profile surface are present — so a template that compiles but drops content is caught.
 
 ## CI gating

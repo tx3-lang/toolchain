@@ -4,7 +4,7 @@ Codegen has three version surfaces that must move in lockstep:
 
 1. **TII schema version** — `TII_VERSION` in `tx3/bin/tx3c/src/tii/types.rs`.
 2. **Plugin template ref** — the immutable git tag a plugin is pinned to (see [plugin-layout.md](plugin-layout.md)). First-party convention: `codegen-v<TII-version>`. Wired through `CURRENT_CODEGEN_VERSION` in `trix/src/config/convention.rs`.
-3. **Runtime SDK** — the package the generated bindings import. Must resolve at the version the consumer has installed.
+3. **Runtime SDK** — the package the generated bindings import. Must resolve at the version the consumer has installed. The template's pinned dependency requirement on the SDK (e.g. `^0.12.0`) MUST be satisfied by the SDK source in the same repository: when the template's required version is bumped, the SDK's own version in `Cargo.toml` / `package.json` / `pyproject.toml` / `go.mod` MUST be bumped in the **same commit**. Letting the template's requirement get ahead of the source version makes the in-checkout codegen check ([testing.md](testing.md)) structurally fail.
 
 A TII schema change requires all three to move together.
 
