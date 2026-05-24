@@ -3,7 +3,8 @@
 An SDK MUST expose a single top-level error type (or error hierarchy) that distinguishes at least:
 
 - **TII / protocol errors** — bad TII file, JSON parse failure, schema validation failure (raised by the loaders in [tii.md](tii.md)).
-- **Name-lookup errors** — `UnknownTx`, `UnknownProfile`, `UnknownParty`. Each is a distinct variant returned by `tx(name)`, `withProfile(name)`, and `withParty(name, party)` respectively (see [facade.md §3.3 Name lookups](facade.md#name-lookups-must)).
+- **Name-lookup errors** — `UnknownTx`, `UnknownProfile`, `UnknownParty`. `UnknownTx` is returned by `tx(name)` on the built client. `UnknownProfile` and `UnknownParty` are returned by `Tx3ClientBuilder.build()` — the optional `withProfile` / `withParty` setters defer name validation to `build()` so chains stay fluent. The optional late-binding `withParty` on the built client returns `UnknownParty` at the call site (see [facade.md §3.3 Name lookups](facade.md#name-lookups-must)).
+- **Construction errors** — `MissingTrpEndpoint` returned by `Tx3ClientBuilder.build()` when no TRP endpoint has been supplied via `trp(options)` or `trpEndpoint(url)`.
 - **TRP transport errors** — network, HTTP status, JSON-RPC error, malformed response.
 - **Resolution errors** — missing required params, arg coercion failures.
 - **Signing errors** — invalid key, hash mismatch, address binding failure.

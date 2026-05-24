@@ -15,7 +15,8 @@ These are the authoritative names for the concepts every SDK exposes. **SDKs MUS
 | **Signer**       | An object capable of producing a `Witness` for a given `SignRequest`. Must expose the address it corresponds to.                                       |
 | **SignRequest**  | Input to `Signer.sign`. Carries the bound tx hash (`txHashHex`) and the full tx CBOR (`txCborHex`). Hash-based signers read the former; tx-based signers (wallet adapters) read the latter. |
 | **Profile**      | A named environment configuration (e.g. `preprod`, `mainnet`) applied to every invocation from a client.                                              |
-| **TxBuilder**    | Fluent builder returned by the client for a given transaction name. Accepts args and terminates in `resolve()`.                                       |
+| **Tx3ClientBuilder** | Fluent builder for the facade client. Obtained from `Protocol.client()`; carries mandatory TRP settings, optional profile / party / env overrides, and terminates in `build()`. See [facade.md §3.3](api-surface/facade.md#construction-must). |
+| **TxBuilder**    | Fluent builder returned by the *built* client for a given transaction name. Accepts args and terminates in `resolve()`.                               |
 | **Invocation**   | A partially-built transaction request: name + args + profile + parties. Produced by `TxBuilder`, consumed by `resolve()`.                             |
 | **Witness**      | A signature payload bound to a tx hash: public key, signature bytes, witness type (e.g. `vkey`).                                                      |
 | **External witness** | A `Witness` produced outside any registered `Signer` (e.g. by a hardware device, browser wallet, or remote signer) and attached to a `ResolvedTx` via `addWitness` before `sign()`. |

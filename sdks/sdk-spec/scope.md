@@ -16,8 +16,8 @@ Everything else — wallet UI, fee estimation outside TRP, chain indexing, key s
 
 ## Recommended Surface (SHOULD)
 
-- **Re-exports at the crate/package root.** A user importing the SDK MUST be able to reach `Tx3Client`, `Party`, `CardanoSigner`, `Ed25519Signer`, and `PollConfig` from the top-level module without drilling into submodules. (Rust SDK does this in `lib.rs`.)
-- **Builder ergonomics.** `withParties(iterable)` for bulk attachment. `args(map)` on the TxBuilder alongside `arg(k, v)`.
+- **Re-exports at the crate/package root.** A user importing the SDK MUST be able to reach `Tx3Client`, `Tx3ClientBuilder`, `Party`, `CardanoSigner`, `Ed25519Signer`, and `PollConfig` from the top-level module without drilling into submodules. (Rust SDK does this in `lib.rs`.)
+- **Builder ergonomics.** `withParties(iterable)` for bulk attachment on the client builder. `args(map)` on the TxBuilder alongside `arg(k, v)`.
 - **Introspection on ResolvedTx.** Expose `hash` / `signingHash` / `txHex`. Feeding externally-signed witnesses back in is required — see [`facade.md` §3.5b](api-surface/facade.md).
 - **Inline rustdoc / TSDoc / docstrings** on every public item, with at least one usage example. See the [docstring strategy](documentation/docstrings.md) for details.
 
@@ -46,7 +46,8 @@ To claim a row of `docs/parity-matrix.md`, an SDK MUST demonstrate each capabili
 
 - [ ] `Protocol.fromFile` works on `sdk-spec/test-vectors/transfer/transfer.tii`
 - [ ] Low-level `TRPClient.resolve`, `submit`, `checkStatus` all implemented
-- [ ] `Tx3Client` facade: `withProfile`, `withParty`, `tx(name).arg(...).resolve()`
+- [ ] `Protocol.client()` returns a `Tx3ClientBuilder`; `.trp(...) / .trpEndpoint(...) / .withProfile / .withParty / .withEnvValue / .build()` validates and yields a `Tx3Client`
+- [ ] `Tx3Client` facade: `tx(name).arg(...).resolve()`, optional late-binding `withParty`, no profile switching
 - [ ] `Party.address` and `Party.signer` both work
 - [ ] `CardanoSigner` from mnemonic + address
 - [ ] `Ed25519Signer` from 32-byte private key + address
