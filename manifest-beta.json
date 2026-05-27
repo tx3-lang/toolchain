@@ -22,7 +22,7 @@
       "description": "The tx3 package manager",
       "repo_name": "trix",
       "repo_owner": "tx3-lang",
-      "version": "^0.23.0"
+      "version": "^0.23.1"
     },
     {
       "name": "tx3-mcp",
