@@ -74,3 +74,24 @@
 	path = backends/tx3-hydra
 	url = git@github.com:tx3-lang/tx3-hydra.git
 	branch = main
+[submodule "protocols/indigo-protocols"]
+	path = protocols/indigo
+	url = git@github.com:open-tx3/indigo-protocols.git
+[submodule "protocols/strike-protocols"]
+	path = protocols/strike
+	url = git@github.com:open-tx3/strike-protocols.git
+[submodule "protocols/bodega-protocols"]
+	path = protocols/bodega
+	url = git@github.com:open-tx3/bodega-protocols.git
+[submodule "protocols/fluid-protocols"]
+	path = protocols/fluid
+	url = git@github.com:open-tx3/fluid-protocols.git
+[submodule "protocols/vyfi-protocols"]
+	path = protocols/vyfi
+	url = git@github.com:open-tx3/vyfi-protocols.git
+[submodule "protocols/snek-fun-protocols"]
+	path = protocols/snek-fun
+	url = git@github.com:open-tx3/snek-fun-protocols.git
+[submodule "protocols/acme-protocols"]
+	path = protocols/acme
+	url = git@github.com:open-tx3/acme-protocols.git

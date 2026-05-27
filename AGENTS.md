@@ -23,6 +23,7 @@ working inside that group.
 - `tooling/` → toolchain binaries and developer tools: `trix`, `tx3up`, `tx3-lsp`, `tx3-mcp`, `tx3-lift`. See [`tooling/AGENTS.md`](./tooling/AGENTS.md).
 - `plugins/` → editor, CI, and agent integrations: `vscode-tx3`, `tx3-skills`, `actions`. See [`plugins/AGENTS.md`](./plugins/AGENTS.md).
 - `backends/` → transaction execution backends and gateways: `tx3-hydra`, `protocol-gateway`. See [`backends/AGENTS.md`](./backends/AGENTS.md).
+- `protocols/` → third-party Tx3 protocol definitions from the `open-tx3` org: `indigo`, `strike`, `bodega`, `fluid`, `vyfi`, `snek-fun`, `acme`. See [`protocols/AGENTS.md`](./protocols/AGENTS.md).
 
 Two submodules and one subtree sit outside the groupings:
 
@@ -40,6 +41,7 @@ Route to a grouping, then consult that grouping's `AGENTS.md` for the specific s
 - `tooling/` — toolchain binaries and developer tools. See [`tooling/AGENTS.md`](./tooling/AGENTS.md).
 - `plugins/` — editor, CI, and agent integrations. See [`plugins/AGENTS.md`](./plugins/AGENTS.md).
 - `backends/` — transaction execution backends / gateways. See [`backends/AGENTS.md`](./backends/AGENTS.md).
+- `protocols/` — third-party Tx3 protocol definitions from the `open-tx3` org. See [`protocols/AGENTS.md`](./protocols/AGENTS.md).
 - `registry/` — UTxO protocol registry application. Backend service (Rust, `backend/`), web frontend (TS, `frontend/`), on-chain tracker (`tracker/`), sample protocol files (`data/*.tx3`), and deployment glue (`bootstrap/`, `docker/`, `zot/`).
 - `docs/` — user-facing docs, tutorials, reference, examples.
 - `sdks/` — per-language SDKs (rust/web/go/python) and the fleet's spec, parity matrix, e2e scripts, and skills. See [`sdks/AGENTS.md`](./sdks/AGENTS.md).
@@ -47,7 +49,7 @@ Route to a grouping, then consult that grouping's `AGENTS.md` for the specific s
 Every grouping `AGENTS.md`, and any individual submodule's own `AGENTS.md` / `CLAUDE.md` /
 `README.md`, overrides this file for work inside that path.
 
-Dependency direction for cross-cutting changes is typically `core/` → `lang/` → `tooling/` → `docs`. `plugins/`, `backends/`, `registry/`, and `sdks/` are downstream consumers that exercise the toolchain against real protocols; treat them like `docs/` for ordering — bump after the upstream change lands.
+Dependency direction for cross-cutting changes is typically `core/` → `lang/` → `tooling/` → `docs`. `plugins/`, `backends/`, `registry/`, `protocols/`, and `sdks/` are downstream consumers that exercise the toolchain against real protocols; treat them like `docs/` for ordering — bump after the upstream change lands.
 
 ## Skills
 
