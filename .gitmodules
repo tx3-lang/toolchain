@@ -95,3 +95,6 @@
 [submodule "protocols/acme-protocols"]
 	path = protocols/acme
 	url = git@github.com:open-tx3/acme-protocols.git
+[submodule "protocols/txpipe-protocols"]
+	path = protocols/txpipe
+	url = git@github.com:open-tx3/txpipe-protocols.git
