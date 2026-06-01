@@ -98,3 +98,7 @@
 [submodule "protocols/txpipe-protocols"]
 	path = protocols/txpipe
 	url = git@github.com:open-tx3/txpipe-protocols.git
+[submodule "backends/dolos"]
+	path = backends/dolos
+	url = git@github.com:txpipe/dolos.git
+	branch = main
