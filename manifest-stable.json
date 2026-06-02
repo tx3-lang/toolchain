@@ -15,28 +15,28 @@
       "description": "The tx3 compiler",
       "repo_name": "tx3",
       "repo_owner": "tx3-lang",
-      "version": "^0.20.0"
+      "version": "^0.21.0"
     },
     {
       "name": "trix",
       "description": "The tx3 package manager",
       "repo_name": "trix",
       "repo_owner": "tx3-lang",
-      "version": "^0.25.0"
+      "version": "^0.25.1"
     },
     {
       "name": "tx3-lsp",
       "description": "A language server for tx3",
       "repo_name": "tx3-lsp",
       "repo_owner": "tx3-lang",
-      "version": "^0.8"
+      "version": "^0.9.0"
     },
     {
       "name": "dolos",
       "description": "A lightweight Cardano data node",
       "repo_name": "dolos",
       "repo_owner": "txpipe",
-      "version": "^1.1.1"
+      "version": "^1.2.0"
     },
     {
       "name": "cshell",
