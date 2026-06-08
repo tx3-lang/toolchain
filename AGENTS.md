@@ -23,7 +23,7 @@ working inside that group.
 - `tooling/` → toolchain binaries and developer tools: `trix`, `tx3up`, `tx3-lsp`, `tx3-mcp`, `tx3-lift`. See [`tooling/AGENTS.md`](./tooling/AGENTS.md).
 - `plugins/` → editor, CI, and agent integrations: `vscode-tx3`, `tx3-skills`, `actions`. See [`plugins/AGENTS.md`](./plugins/AGENTS.md).
 - `backends/` → transaction execution backends and gateways: `tx3-hydra`, `protocol-gateway`. See [`backends/AGENTS.md`](./backends/AGENTS.md).
-- `protocols/` → third-party Tx3 protocol definitions from the `open-tx3` org: `indigo`, `strike`, `bodega`, `fluid`, `vyfi`, `snek-fun`, `acme`. See [`protocols/AGENTS.md`](./protocols/AGENTS.md).
+- `protocols/` → third-party Tx3 protocol definitions from the `open-tx3` org: `indigo`, `strike`, `bodega`, `fluid`, `vyfi`, `snek-fun`, `acme`, `githoney`. See [`protocols/AGENTS.md`](./protocols/AGENTS.md).
 
 Two submodules and one subtree sit outside the groupings:
 
@@ -67,6 +67,7 @@ Available skills:
 
 - `skills/channel-version-update/` — update toolchain component versions by checking GitHub releases and updating the manifest files.
 - `skills/publish-docs-site/` — publish the latest Tx3 docs to the company-wide docs site (`docs.txpipe.io`) by triggering the `txpipe/docs` `update-submodules` workflow.
+- `skills/commit-umbrella/` — commit the umbrella repo after submodule pointers move, pre-checking that submodules are pushed, track latest `main`, and that grouping `AGENTS.md` routing is up to date.
 - `sdks/skills/` — SDK-fleet skills (`add-sdk-feature`, `audit-parity`, `propagate-change`, `release-synced`, `release-sdk-patch`, `run-e2e-tests`, `scaffold-new-sdk`).
 
 ## Scope of this repo

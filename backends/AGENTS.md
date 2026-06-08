@@ -9,6 +9,7 @@ environments. These are downstream consumers — bump them after upstream change
 
 - `backends/tx3-hydra/` → [`tx3-lang/tx3-hydra`](https://github.com/tx3-lang/tx3-hydra) — Tx3 execution backend for Hydra state channels.
 - `backends/protocol-gateway/` → [`tx3-lang/protocol-gateway`](https://github.com/tx3-lang/protocol-gateway) — API layer / gateway service for Cardano protocols built with Tx3.
+- `backends/dolos/` → [`txpipe/dolos`](https://github.com/txpipe/dolos) — Cardano data node used as a Tx3 execution backend.
 
 A submodule's own `AGENTS.md` / `CLAUDE.md` / `README.md` overrides this file for work inside
 that path.
