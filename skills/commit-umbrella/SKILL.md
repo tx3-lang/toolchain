@@ -59,9 +59,25 @@ bash skills/commit-umbrella/check-tracking.sh
 - `OK` — good.
 - `BEHIND` — upstream `main` has moved past the pinned commit. Decide with the user whether to fast-forward
   to the tip before committing (usual intent for an umbrella bump) or intentionally pin an older commit.
-- `DIVERGED` — the submodule is on a feature branch or points at work not yet merged to `main`
-  (the `git submodule status` listing shows the branch/tag name). **Stop**: the umbrella's `main`
-  should not record unmerged submodule work unless the user explicitly wants that. Ask.
+- `DIVERGED` — the pinned commit is **not in `origin/main`'s history**. This means one of two very
+  different things, and the ancestry/SHA check **cannot tell them apart** (see the squash-merge note
+  below):
+  1. **Truly unmerged feature work** — the PR is still open or the branch was never merged. **Stop**:
+     the umbrella's `main` should not record unmerged submodule work unless the user explicitly wants
+     that. Ask.
+  2. **A merged PR whose merge rewrote the SHA** — see next paragraph. The work *is* on `main`, but
+     under a different commit. The fix is not to pin the feature-branch commit; it is to **move the
+     submodule pointer to the `origin/main` tip** (`git -C <path> checkout main && git -C <path> pull`),
+     which now contains the squashed/rebased commit, and commit *that*.
+
+  **Squash-merge caveat (important):** this repo's submodule PRs are normally **squash-merged** (and
+  sometimes rebase-merged). A squash merge collapses the whole feature branch into a single brand-new
+  commit on `main` with a fresh SHA; the original feature-branch commits never become ancestors of
+  `main`. So a feature branch whose PR has *already merged* will still report `DIVERGED` here —
+  matching commit hashes is **not** a valid way to confirm a merge under squash-merge. To distinguish
+  case 1 from case 2, **check the PR's merge state directly** (`gh pr view <n> --json state,mergedAt`
+  or `gh pr list --head <branch> --state merged --repo <owner/repo>`), not the commit SHA. Once
+  confirmed merged, fast-forward the submodule to `origin/main` and use that tip as the pointer.
 
 ### 4. Check 3 — routing in grouping `AGENTS.md` is up to date
 Verify each submodule `path` in `.gitmodules` is documented in the right doc. A submodule under
@@ -101,6 +117,11 @@ git push origin <branch>
 - **Don't auto-resolve `DIVERGED`/`BEHIND`.** Surface them and let the user decide whether to
   fast-forward, leave the pin, or wait for an upstream merge. Committing unmerged submodule work to
   the umbrella `main` is almost never intended.
+- **`DIVERGED` does not mean "unmerged" — verify the PR, not the SHA.** Because submodule PRs are
+  squash-merged (a fresh SHA on `main`, original commits never ancestors), the SHA/ancestry check
+  flags *every* merged-via-squash branch as `DIVERGED`. Always confirm merge state with `gh pr`
+  before deciding. If the PR merged: fast-forward the submodule to `origin/main` and pin that tip —
+  never pin the now-orphaned feature-branch commit. If the PR is open: stop and wait for the merge.
 - **Routing fixes are in scope.** If Check 3 fails because a submodule was added/removed, update the
   grouping `AGENTS.md` (and root summary) as part of this commit — that's the whole point of the check.
 - **Scope discipline.** This skill commits submodule-pointer and routing-doc changes. It does not
@@ -110,7 +131,7 @@ git push origin <branch>
 - [ ] No moved submodule has unpushed commits (Check 1 all `OK`).
 - [ ] No moved submodule is dirty (uncommitted working-tree changes).
 - [ ] Each submodule is at — or intentionally pinned relative to — its upstream branch tip (Check 2).
-- [ ] No submodule pins unmerged feature-branch work without explicit user approval.
+- [ ] No submodule pins unmerged feature-branch work without explicit user approval. (For any `DIVERGED` submodule, the PR's merge state was confirmed via `gh pr` — not inferred from the commit SHA, which squash-merge rewrites — and merged ones were repinned to the `origin/main` tip.)
 - [ ] Every `.gitmodules` path is documented and no stale routing entries remain (Check 3).
 - [ ] Manifest changes, if any, are committed separately.
 

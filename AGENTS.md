@@ -68,6 +68,7 @@ Available skills:
 - `skills/channel-version-update/` — update toolchain component versions by checking GitHub releases and updating the manifest files.
 - `skills/publish-docs-site/` — publish the latest Tx3 docs to the company-wide docs site (`docs.txpipe.io`) by triggering the `txpipe/docs` `update-submodules` workflow.
 - `skills/commit-umbrella/` — commit the umbrella repo after submodule pointers move, pre-checking that submodules are pushed, track latest `main`, and that grouping `AGENTS.md` routing is up to date.
+- `skills/add-language-feature/` — roll out a new Tx3 language feature (operator, expression form, builtin) across every toolchain layer: spec, grammar/AST, analysis/lowering, TIR/reduction, downstream consumers, docs, and agent skills.
 - `sdks/skills/` — SDK-fleet skills (`add-sdk-feature`, `audit-parity`, `propagate-change`, `release-synced`, `release-sdk-patch`, `run-e2e-tests`, `scaffold-new-sdk`).
 
 ## Scope of this repo

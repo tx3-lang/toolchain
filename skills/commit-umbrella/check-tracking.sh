@@ -18,7 +18,7 @@ out=$(git submodule foreach --quiet '
   elif git merge-base --is-ancestor "$pinned" "$tip"; then
     echo "BEHIND   $sm_path: behind origin/$branch (checkout $branch && pull to fast-forward)"
   else
-    echo "DIVERGED $sm_path: not on origin/$branch (feature branch or unmerged work)"
+    echo "DIVERGED $sm_path: pinned commit not in origin/$branch history (unmerged work, OR a squash/rebase-merged PR — the merge rewrote the SHA; verify the PR is merged, then move the pointer to origin/$branch tip)"
   fi
   exit 0
 ')
