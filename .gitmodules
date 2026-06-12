@@ -102,3 +102,6 @@
 	path = backends/dolos
 	url = git@github.com:txpipe/dolos.git
 	branch = main
+[submodule "protocols/githoney-protocols"]
+	path = protocols/githoney
+	url = git@github.com:open-tx3/githoney-protocols.git

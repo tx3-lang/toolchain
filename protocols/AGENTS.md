@@ -14,6 +14,8 @@ on-chain Cardano protocol, used as real-world fixtures for the toolchain.
 - `protocols/vyfi/` → [`open-tx3/vyfi-protocols`](https://github.com/open-tx3/vyfi-protocols) — VyFi protocol Tx3 definitions.
 - `protocols/snek-fun/` → [`open-tx3/snek-fun-protocols`](https://github.com/open-tx3/snek-fun-protocols) — Snek.fun protocol Tx3 definitions.
 - `protocols/acme/` → [`open-tx3/acme-protocols`](https://github.com/open-tx3/acme-protocols) — Acme reference / example protocol definitions.
+- `protocols/githoney/` → [`open-tx3/githoney-protocols`](https://github.com/open-tx3/githoney-protocols) — GitHoney bounty protocol Tx3 definitions.
+- `protocols/txpipe/` → [`open-tx3/txpipe-protocols`](https://github.com/open-tx3/txpipe-protocols) — TxPipe protocol Tx3 definitions.
 
 A submodule's own `AGENTS.md` / `CLAUDE.md` / `README.md` overrides this file for work inside
 that path.
