@@ -17,3 +17,11 @@ This directory contains canonical, spec-level e2e vectors shared across all Tx3 
   - `transfer.tx3`
   - `transfer.tii`
   - `transfer.preprod.env`
+- `complex-types/`
+  - `complex.tii` — schema-only fixture whose `complex` transaction declares one
+    param of every `ParamType` kind (integer, boolean, unit, Address, UtxoRef,
+    AnyAsset, list, tuple, map, plus a component-ref record `AssetClass` and a
+    component-ref variant `Side`), with scalar `$ref`s in the canonical
+    `tii#/$defs/` form. Used to verify parameter-type interpretation parity
+    across SDKs (see `api-surface/args.md`). The TIR envelope is a non-resolvable
+    placeholder — this vector is for type-model tests, not TRP resolution.

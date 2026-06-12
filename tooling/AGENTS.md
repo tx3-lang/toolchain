@@ -10,6 +10,7 @@ Part of the Tx3 [`toolchain`](../AGENTS.md) umbrella. The `tooling/` grouping ho
 - `tooling/tx3-lsp/` → [`tx3-lang/tx3-lsp`](https://github.com/tx3-lang/tx3-lsp) — `tx3-lsp` language server.
 - `tooling/tx3-mcp/` → [`tx3-lang/tx3-mcp`](https://github.com/tx3-lang/tx3-mcp) — MCP server exposing the toolchain to AI agents / editors.
 - `tooling/tx3-lift/` → [`tx3-lang/tx3-lift`](https://github.com/tx3-lang/tx3-lift) — semantic-enrichment framework: annotates on-chain txs with Tx3 protocol context.
+- `tooling/cshell/` → [`txpipe/cshell`](https://github.com/txpipe/cshell) — `cshell` terminal wallet for Cardano.
 
 A submodule's own `AGENTS.md` / `CLAUDE.md` / `README.md` overrides this file for work inside
 that path.

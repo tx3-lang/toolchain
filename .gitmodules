@@ -105,3 +105,7 @@
 [submodule "protocols/githoney-protocols"]
 	path = protocols/githoney
 	url = git@github.com:open-tx3/githoney-protocols.git
+[submodule "tooling/cshell"]
+	path = tooling/cshell
+	url = git@github.com:txpipe/cshell.git
+	branch = main
