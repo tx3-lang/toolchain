@@ -19,8 +19,9 @@ pointer that other clones can't resolve, lags behind upstream, or contradicts th
 - **`.gitmodules`** — source of truth for the submodule list: `path`, `url`, and optional `branch`
   (defaults to the remote's default branch, normally `main`) per submodule.
 - **Grouping folders** — `core/`, `lang/`, `tooling/`, `plugins/`, `backends/`, `protocols/`,
-  `sdks/`, each with an `AGENTS.md` that routes per-submodule. `registry/`, `docs/` are routed
-  directly from the root [`AGENTS.md`](../../AGENTS.md).
+  `services/`, `sdks/`, each with an `AGENTS.md` that routes per-submodule (`registry` and `docs`
+  live under `services/`). A path with no grouping `AGENTS.md` falls back to the root
+  [`AGENTS.md`](../../AGENTS.md) — currently none, since every submodule lives under a grouping.
 - **Pinned commit** — the submodule SHA recorded (or about to be staged) in the umbrella. Read it
   with `git submodule status` (a `+` prefix means the checked-out commit differs from the staged
   pointer; a `-` means uninitialized; `U` means a conflict).
@@ -81,8 +82,9 @@ bash skills/commit-umbrella/check-tracking.sh
 
 ### 4. Check 3 — routing in grouping `AGENTS.md` is up to date
 Verify each submodule `path` in `.gitmodules` is documented in the right doc. A submodule under
-`<group>/…` must appear in `<group>/AGENTS.md`; `registry/` and `docs/` must appear in the root
-`AGENTS.md`:
+`<group>/…` must appear in `<group>/AGENTS.md` (every submodule now lives under a grouping folder,
+including `services/registry` and `services/docs`); a path with no grouping `AGENTS.md` would fall
+back to the root `AGENTS.md`:
 ```bash
 bash skills/commit-umbrella/check-routing.sh
 ```

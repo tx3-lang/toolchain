@@ -1,184 +1,174 @@
 # Release Toolchain Skill
 
 ## Purpose
-Orchestrate a **cross-cutting toolchain release** — a change that originates in an upstream
-crate (`core/tir`, `lang/tx3`) and must ripple through every downstream consumer that pins it
-via crates.io — interactively, in lockstep with the developer who performs the actual
-`crates.io` publishes. This skill is the conductor: it sequences the dependency waves, pauses
-at each **publish gate** for the developer to cut the release, then bumps the next wave's
-dependency pins, and finishes by moving submodule pointers and the `trix` version floor. It was
-battle-tested by the parametric-tuple rollout (tir `0.18.0` → tx3-lang `0.22.0` + siblings →
-lsp/mcp/registry → trix floor → umbrella).
+Orchestrate a **cross-cutting toolchain release** — a change that originates upstream (`core/tir`,
+`lang/tx3`) and must ripple through every downstream grouping that consumes it. This skill is a **pure
+conductor**: it detects which groupings have pending releasable work, runs each grouping's own release
+sub-procedure in dependency order, threads the just-published versions forward as the next grouping's
+inputs, and finishes with the umbrella-level steps (pointers, manifest, docs). It does **not** know how
+any individual submodule publishes — that lives in the per-grouping skills.
+
+The decomposition follows the repo's folder groupings, which are its natural release layers. Each
+grouping owns a release skill that instantiates the uniform `grouping-contract.md`:
+
+| Grouping | Skill | Location |
+| --- | --- | --- |
+| core | `release-core` | `core/skills/` |
+| lang | `release-lang` | `lang/skills/` |
+| sdks | `release-synced` / `release-sdk-patch` | `sdks/skills/` (adapter — see below) |
+| tooling | `release-tooling` | `tooling/skills/` |
+| plugins | `release-plugins` | `plugins/skills/` |
+| backends | `release-backends` | `backends/skills/` (flag-and-defer) |
+| protocols | `verify-protocols` | `protocols/skills/` (verify-only, no publish) |
+| services | `release-registry` (registry) · `publish-docs-site` (docs) | `services/skills/` |
 
 It complements the other skills rather than replacing them:
 - **`add-language-feature`** lands the *code* across submodules (one PR each). Run it first.
-- **`release-toolchain`** (this) sequences *publishing* those merged crates and bumping the
-  pins that connect them. Run it after the feature PRs are merged.
-- **`commit-umbrella`** is the final wave (submodule-pointer commit) — invoked from here.
-- **`channel-version-update`** ships the resulting *binaries* to a release channel — a
-  separate, later step once the tools cut GitHub releases.
+- **`release-toolchain`** (this) sequences the grouping releases of that merged code.
+- **`commit-umbrella`** and **`channel-version-update`** are the finalization steps — invoked from here.
 
 ## Prerequisites
 - Run from the umbrella repo root with submodules initialized (`git submodule update --init`).
 - The feature/fix code is already **merged** into each affected submodule's `main` (that's
   `add-language-feature`'s job). This skill releases what is merged; it does not write feature code.
-- `cargo` for building/verifying each Rust workspace; `gh` authenticated for PR/merge checks.
-- **The developer publishes to crates.io**, not the agent. The agent prepares dep bumps and
-  verifies builds; it stops at each publish gate and waits for the developer's "published vX" signal.
+- `cargo` for building/verifying each Rust workspace; `gh` authenticated for PR/merge/release checks.
+- **The developer publishes / tags / moves marketplace artifacts**, never the agent. Each grouping
+  skill stops at a gate and waits for the developer's "done" signal.
 
 ## Context
 
-### The crates.io dependency graph (what pins what)
-Submodules are independent repos depending on each other by **published crates.io version**, not
-path deps. A release wave = the set of crates that can publish once their upstream pin is available.
+### The dependency graph (what the order encodes)
+Submodules are independent repos depending on each other by **published artifact version** (crates.io
+crate, released binary tag), not path deps. Releasing flows along the grouping dependency direction:
 
 ```
-core/tir  (tx3-tir)
-   │  pinned by ↓
-lang/tx3      (tx3-lang, tx3-cardano, tx3-resolver)   ── also: registry, tooling/tx3-lift pin tx3-tir directly
-   │  pinned by ↓
-tooling/tx3-lsp, tooling/tx3-mcp, registry            ── pin tx3-lang (and often tx3-tir transitively)
-   │  gated by ↓
-tooling/trix  ([toolchain] floor + COMPAT_MATRIX)     ── version-gates the produced TIR; no crate dep
-   │  recorded by ↓
-umbrella submodule pointers  →  manifest-*.json (binaries, later, separate channel release)
+core      (tx3-tir)
+  │
+lang      (tx3-lang, tx3-cardano, tx3-resolver, + tx3c binary)
+  │
+sdks      (tx3-sdk)                      ── consumed by tx3-lift & tx3-mcp, so it precedes tooling
+  │
+tooling   (tx3-lsp, tx3-lift crates; trix/tx3-mcp/tx3-lsp/tx3up binaries; trix COMPAT_MATRIX floor)
+  │
+  ├── plugins           (vscode-tx3, tx3-skills, actions — soft compat only)
+  ├── backends          (tx3-hydra, protocol-gateway — flag-and-defer; dolos third-party)
+  └── services/registry (pins tx3-lang + tx3-tir + git-rev to tx3-lift)
+        │
+  protocols (verify .tx3 against the new toolchain) → services/docs (publish-docs-site, runs last)
 ```
 
-Verify the real pins before sequencing — grep, don't assume:
-```bash
-grep -rn 'tx3-tir\s*=\|tx3-lang\s*=' --include=Cargo.toml core lang tooling registry
-```
-
-### Semver reality for 0.x crates — the central hazard
-**Every `0.x.y` minor bump is breaking** (cargo treats `^0.17` and `0.18` as incompatible). This
-makes a tir bump a *flag-day* for its consumers:
-- You **cannot** half-bump. If consumer C directly pins `tx3-tir = 0.18` but still pins a
-  *published* `tx3-lang` that itself pins `tx3-tir = ^0.17`, cargo must resolve two incompatible
-  tirs in one tree → it fails. **Hold C until `tx3-lang` is republished against the new tir**, then
-  bump both pins in C together.
-- **Transitive pins via git-rev deps are a trap.** A consumer that pins a sibling by git rev
-  (e.g. `registry/tracker` → `tx3-lift` at rev `abc123`) drags in *that rev's* tir. Bumping the
-  consumer's direct tir while the git-rev still carries old tir reproduces the dual-tir conflict.
-  Advance the git rev to the sibling's merged bump commit as part of the same wave.
+### Semver reality for 0.x crates — why the order matters
+**Every `0.x.y` minor bump is breaking** (cargo treats `^0.17` and `0.18` as incompatible). A consumer
+that pins both an upstream crate *and* its transitive dep must bump them together, *after* the upstream
+republishes — bump one early and cargo fails with `links to two different versions`. In the old
+monolithic skill this was a manual hazard re-derived every release. **Here it is structural:** because
+the orchestrator runs groupings in dependency order and never starts a downstream grouping until the
+upstream grouping's publish gate has closed and been verified, `upstream_versions` only ever carries
+*already-published* artifacts. A grouping skill therefore cannot bump a pin to an unpublished upstream.
+The contract (`grouping-contract.md`) states this invariant; this skill enforces it by sequencing.
 
 ### Publish gates are developer actions
-The agent never runs `cargo publish`. Each wave ends at a gate where the developer (or CI-on-tag)
-publishes the wave's crates. The skill's job at a gate: state exactly **which crates, which
-versions** to publish, then **stop and wait**. The developer's reply ("published tx3-tir 0.18",
-"sibling crates published") is the signal to start the next wave's dep bumps.
+The agent never runs `cargo publish`, pushes a tag, or moves a marketplace artifact. Each grouping
+skill ends at a gate that states exactly which artifacts at which versions to publish, then stops. The
+developer's reply ("published / tagged X") is the signal for the orchestrator to verify and proceed.
 
-### Verifying an un-published wave: patch, build, revert
-To confirm a downstream crate *will* build against an upstream that isn't on crates.io yet, use a
-temporary `[patch.crates-io]` path override (depth-adjusted per crate), build, then revert **both**
-`Cargo.toml` and `Cargo.lock` individually. Never commit a patch or lockfile churn. (Full mechanics
-in `add-language-feature`'s "Cross-repo dependency model".) The compile is the safety net for
-exhaustive-match breaks — and a `-p <single-crate>` build can **miss** a sibling binary's broken
-match (the tuple rollout's `bin/tx3c` arm surfaced only on a full-workspace build); build the
-**whole workspace** of each consumer, not just the changed package.
+### The uniform grouping contract
+Every grouping skill takes `{ target_channel, upstream_versions, scope, bump_policy }`, runs the
+6-step procedure (map → bump intra-grouping pins → whole-workspace build → developer gate → verify →
+report), and returns `{ crates, binaries, floors, pointers, adopted, skipped }`. The full spec is in
+[`grouping-contract.md`](./grouping-contract.md). The orchestrator composes these blindly — it only
+reads the contract's Inputs/Outputs, not each grouping's internal mechanics.
 
 ## Procedure
 
-### 0. Map the release and confirm the plan with the developer
-1. Identify the originating change and the **lowest** crate it modifies (usually `tx3-tir` or
-   `tx3-lang`). Grep the pin graph (above) to enumerate every downstream consumer.
-2. Decide each crate's **new version** with the developer (0.x minor for a breaking schema add;
-   patch only for a truly compatible fix — rare across the tir boundary).
-3. Lay out the waves as a table and get a go-ahead. Example (tuple rollout):
+### 0. Detect pending releasable work per grouping
+For each grouping, decide whether it has scope. Detection must be **grouping-type aware**:
+- cargo-dist / crate repos (`core/tir`, `lang/tx3`, `tooling/*`): compare the latest release
+  tag against `main` — commits ahead ⇒ pending; also flag pins lagging the about-to-publish upstreams.
+- spec / pointer / deploy repos (`core/tii`, `core/trp`, `plugins/*`, `services/registry`,
+  `services/docs`): `main` advanced past the umbrella pointer ⇒ pending (they have no release tags).
+  Also flag `services/registry` pins lagging the about-to-publish upstreams.
+- adopt-only / deploy-only repos (`tooling/cshell`, `backends/dolos`, `backends/{tx3-hydra,
+  protocol-gateway}`): never auto-detect as a *publish* — adopt upstream / flag-and-defer only.
 
-   | Wave | Crates | Publishes | Then bump |
-   | --- | --- | --- | --- |
-   | 1 | `tx3-tir` | → 0.18.0 | tir pin in lang/tx3, registry, tx3-lift |
-   | 2 | `tx3-lang`,`tx3-cardano`,`tx3-resolver` | → 0.22.0 | tx3-lang pin in lsp/mcp/registry |
-   | 3 | (consumers don't publish libs) | — | lsp/mcp/registry dep bumps land |
-   | 4 | `trix` | floor → 0.22.0 | `[toolchain]` + COMPAT_MATRIX |
-   | 5 | umbrella | pointers | commit-umbrella |
+Produce a `pending` map keyed by grouping; empty groupings are skipped.
 
-### 1. Wave 1 — release the root crate (e.g. `tx3-tir`)
-1. Confirm the root crate's `main` carries the merged change and its `Cargo.toml` version is the
-   target (bump it in a small PR if not — that PR is part of `add-language-feature`, not this skill).
-2. **Gate:** tell the developer *"publish `tx3-tir 0.18.0` to crates.io, then confirm."* **Stop.**
-3. On confirmation, proceed to Wave 2.
+### 1. Order the groupings
+Use the fixed topological order — the groupings are fixed, so this is not a computed DAG:
 
-### 2. Wave 2 — bump the pin, land + release the next layer (`tx3-lang` & siblings)
-1. In every crate that *directly* pins the just-published crate (`lang/tx3` workspace: tx3-lang,
-   tx3-cardano, tx3-resolver; plus `registry`, `tooling/tx3-lift`), update the pin to the new
-   version. Bump the crates' **own** versions where they also re-publish (tx3-lang 0.21→0.22).
-2. Verify each builds (full workspace) against the now-published upstream — no patch needed once
-   it's on crates.io; if you're ahead of the publish, use the patch-build-revert dance.
-3. Land these dep-bump commits (PRs, squash-merged). Note in each PR body: *"depends on tx3-tir
-   0.18 (published); release after merge."*
-4. **Gate:** tell the developer *"publish `tx3-lang`, `tx3-cardano`, `tx3-resolver` 0.22.0."* **Stop.**
+```
+core → lang → sdks → tooling → { plugins, backends, registry } → protocols → docs
+```
 
-### 3. Wave 3 — bump the leaf consumers (`tx3-lsp`, `tx3-mcp`, `registry`)
-1. Now that `tx3-lang` is published against the new tir, bump **both** `tx3-lang` and (if directly
-   pinned) `tx3-tir` in the leaf consumers **together** — this resolves the dual-tir hazard.
-2. For any consumer pinning a sibling by **git rev**, advance the rev to that sibling's merged
-   bump commit (`registry/tracker` → `tx3-lift` new rev). Confirm the rev is on the sibling's `main`.
-3. Build each consumer's **whole workspace**. Environmental test failures (e.g. `DATABASE_URL must
-   be set` for sqlx integration tests) are not release blockers — distinguish them from compile
-   breaks and say so. Pre-existing, unrelated breakage (e.g. an upstream protobuf drift) is **out
-   of scope**: document it in the PR, don't fix it here.
-4. Land the consumer dep-bump PRs.
+`sdks` runs **before** `tooling` because `tooling/tx3-lift` and `tooling/tx3-mcp` pin `tx3-sdk`.
+`registry` and `docs` both live in `services/` and are sequenced individually — `registry` right after
+`tooling`, `docs` (via `publish-docs-site`) dead last.
 
-### 4. Wave 4 — raise the `trix` version floor
-The TIR schema addition is **forward-incompatible** (a pre-bump reader hits `unknown variant`).
-The gate that protects users is `trix`'s version check, in two places:
-1. `tooling/trix/src/spawn/compat.rs` — raise `COMPAT_MATRIX` `tx3c { min }` to the producing
-   release (e.g. `0.22.0`) and update the rationale comment to name the new feature/variant.
-2. Projects pin their own floor in `trix.toml [toolchain] tx3c` (a lower bound only). The matrix
-   is the global default. Decide with the developer whether this release moves the global floor.
-3. `cargo test -p trix` (the `evaluate`/`collect_project_mins` unit tests gate this). Land the PR.
+### 2. Confirm the wave plan with the developer
+Render a table — one row per in-scope submodule: grouping, submodule, current → target version, gate
+action — and get a go-ahead before invoking any grouping skill. This is the single confirmation point
+that replaces the old per-crate-wave table.
 
-### 5. Wave 5 — move umbrella pointers
-Hand off to **`commit-umbrella`**: it runs the three pre-flight checks (pushed / tracks-latest-main
-/ routing), repins each moved submodule to its `origin/main` tip (remember: squash-merge rewrites
-SHAs, so `DIVERGED` is confirmed via `gh pr`, not SHA matching), and commits the pointer bump on the
-staging branch. Stage only the submodules this release moved; leave unrelated drift (other behind
-backends, stray `AGENTS.md` edits) untouched and surface it.
+### 3. Run each grouping skill in order, threading versions
+Initialize `upstream_versions = {}`. For each grouping in topological order with non-empty scope:
+1. Invoke `release-<grouping>` with `{ target_channel, upstream_versions, scope, bump_policy }`.
+2. It runs its own procedure and stops at its developer gate; the developer publishes/tags; it verifies.
+3. On return, **merge** its `crates` + `binaries` + `floors` into `upstream_versions`, and accumulate
+   its `pointers` and `adopted` into the run-wide totals.
 
-### 6. (Later, separate) ship binaries to a channel
-Releasing the *crates* does not ship the *tools* to users. When the binaries (`tx3c`, `trix`,
-`tx3-lsp`, `tx3-mcp`) cut their own GitHub releases, use **`channel-version-update`** to bump
-`manifest-*.json`. That's a distinct, developer-initiated step — mention it as the natural
-follow-up; don't fold it into this release without being asked.
+Because each grouping's gate closes (and is verified) before the next grouping starts, no downstream
+pin is ever bumped to an unpublished upstream.
+
+### 4. Adapter hand-offs (groupings that aren't uniform-contract instances)
+- **sdks** — the fleet skills take a `MAJOR.MINOR` train, not the contract's Inputs map. If the SDKs need
+  a coordinated bump for this release, invoke `sdks/skills/release-synced` (or `release-sdk-patch` for a
+  single SDK); otherwise just record the already-published `tx3-sdk` version into `upstream_versions`.
+- **backends** — `release-backends` is **flag-and-defer**: it reports how far `tx3-hydra` /
+  `protocol-gateway` lag the adopted upstreams and does **not** auto-bump them; `dolos` is third-party
+  adopt-only. No publish gate.
+- **protocols** — `verify-protocols` re-checks the `open-tx3` `.tx3` files against the new `tx3c`/`trix`
+  and reports breakages; it releases nothing.
+- **docs** — defer to `publish-docs-site` at finalization if docs moved.
+
+### 5. Finalize (umbrella-level — each its own commit)
+1. **`commit-umbrella`** with the accumulated `pointers`: it runs the three pre-flight checks (pushed /
+   tracks-latest-main / routing), repins each moved submodule to its `origin/main` tip (squash-merge
+   rewrites SHAs, so confirm merges via `gh pr`, not SHA), and commits the pointer bump. Stage **only**
+   this release's submodules; surface unrelated drift, don't fast-forward it.
+2. **`channel-version-update`** for the manifest binaries (`tx3c`, `trix`, `tx3-lsp`, `tx3-mcp`,
+   `dolos`, `cshell`, `tx3up`), driven from the run's `binaries` + `adopted`. Note `tx3c` maps to
+   `repo_owner=tx3-lang, repo_name=tx3`. Keep the manifest edit in its own commit.
+3. **`publish-docs-site`** if docs moved.
 
 ## Decision Guidelines
-- **Never publish for the developer.** State the crates+versions for each gate and wait. Publishing
-  is irreversible and outward-facing.
-- **Bump consumers of a 0.x crate in lockstep, not piecemeal.** A consumer that pins both
-  `tx3-lang` and `tx3-tir` must move both in one commit *after* `tx3-lang` republishes — bumping
-  one early guarantees a dual-version resolve failure.
-- **Treat git-rev deps as version pins.** They carry a transitive crate graph; advancing the direct
-  pin without advancing the rev re-introduces the conflict.
-- **Verify merge state via `gh pr`, not SHA** when repinning submodules — squash-merge gives every
-  merged branch a fresh SHA (see `commit-umbrella`).
-- **Patch-build-revert to verify ahead of a publish; never commit the patch or lockfile churn.**
-- **Distinguish compile breaks from environmental/pre-existing failures.** Only the former block a
-  wave. Name the latter to the developer and keep them out of scope.
-- **Scope the umbrella commit to this release's submodules.** Don't fast-forward unrelated drift.
+- **Conduct; don't reimplement.** Per-submodule publish mechanics live in the grouping skills. If you
+  are editing a `Cargo.toml` pin or a `COMPAT_MATRIX` from this skill, you've reached too far down — that
+  belongs in `release-<grouping>`.
+- **Order is the safety mechanism.** Never run a downstream grouping before its upstream grouping's gate
+  has closed and verified. The order *is* the lockstep guarantee.
+- **Never publish for the developer.** Each grouping skill states its gate and waits.
+- **Scope the finalization to this release.** `commit-umbrella` stages only moved submodules; the
+  manifest edit lists only bumped binaries.
+- **sdks / docs / protocols / backends are not uniform instances** — invoke them via their adapters
+  (step 4), don't force them into the contract.
 
 ## Safety Checks
-- [ ] Wave order respects the pin graph: root crate published *before* any consumer bumps its pin.
-- [ ] No consumer was bumped while still pinning a published upstream that carries the old (incompatible) transitive version — dual-version resolves were avoided.
-- [ ] Git-rev deps advanced to the sibling's merged bump commit (rev confirmed on `main`).
-- [ ] Each consumer's **whole workspace** compiled (not just `-p` the changed crate) — exhaustive-match breaks in sibling binaries caught.
-- [ ] Every temporary `[patch.crates-io]` and `Cargo.lock` change reverted before committing.
-- [ ] `trix` floor (`COMPAT_MATRIX` + rationale comment) raised to the producing release; `cargo test -p trix` green.
-- [ ] Umbrella pointers moved via `commit-umbrella` (its three checks passed); only this release's submodules staged.
-- [ ] Each publish was performed by the developer at an explicit gate, not by the agent.
+- [ ] Pending work detected per grouping with type-aware heuristics; empty groupings skipped.
+- [ ] Groupings run in the fixed order `core → lang → sdks → tooling → {plugins, backends, registry} → protocols → docs`.
+- [ ] `upstream_versions` only ever held verified-published artifacts when a grouping skill consumed it (the structural invariant).
+- [ ] Each grouping skill's publish gate was performed by the developer and verified before the next grouping ran.
+- [ ] `commit-umbrella` ran with the accumulated pointers (its three checks passed); only this release's submodules staged.
+- [ ] `channel-version-update` bumped only the manifest binaries that actually released (from `binaries` + `adopted`); its own commit.
+- [ ] `publish-docs-site` run iff docs moved.
 
 ## Error Handling
-- **`failed to select a version … links to two different versions of tx3-tir`** — the dual-tir
-  conflict: a consumer pins new tir directly while a published `tx3-lang` (or a git-rev sibling)
-  still pins old tir. Hold the consumer until `tx3-lang` republishes, then bump both pins together;
-  advance any git-rev sibling to its new-tir commit.
-- **`unknown variant <X>` / wrong-arity decode at runtime** — a pre-bump reader met new TIR.
-  Expected forward-incompat; the fix is the `trix` floor bump (Wave 4), not a code change.
-- **Exhaustive-match compile error surfaces only on full build** — you built `-p <crate>` and missed
-  a sibling binary's match arm. Rebuild the whole workspace of every consumer.
-- **`DATABASE_URL must be set` / other env-dependent test failure** — environmental, not a release
-  blocker. Confirm the crate *compiles*; note the skipped integration tests to the developer.
-- **Pre-existing unrelated breakage in a consumer (e.g. upstream protobuf drift)** — out of scope.
-  Document in the PR; do not fix it inside the release.
-- **Submodule reports `DIVERGED` at the umbrella step** — squash-merge rewrote the SHA. Confirm the
-  PR merged via `gh pr`, fast-forward the submodule to `origin/main`, pin that tip (see `commit-umbrella`).
+- **A grouping skill wants to bump a pin to an unpublished upstream** — the structural invariant is
+  violated: an upstream gate hasn't actually closed. Stop, verify the upstream publish, fix the order.
+- **`failed to select a version … links to two different versions of tx3-tir`** — a downstream grouping
+  ran before its upstream republished, or a git-rev sibling still carries old tir. Should be impossible
+  if the order held; if it appears, an out-of-order or git-rev pin slipped through (see `release-registry`).
+- **Submodule reports `DIVERGED` at finalization** — squash-merge rewrote the SHA. Confirm the PR merged
+  via `gh pr`, fast-forward to `origin/main`, pin that tip (see `commit-umbrella`).
+- **A grouping has no release mechanism for its pending work** (spec-only, deploy-only) — that's
+  expected: `core/tii`/`trp` are pointer-only, backends are flag-and-defer, protocols are verify-only.
+  Don't invent a publish gate for them.

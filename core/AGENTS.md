@@ -12,3 +12,7 @@ dependency chain: `core/` → `lang/` → `tooling/`.
 
 A submodule's own `AGENTS.md` / `CLAUDE.md` / `README.md` overrides this file for work inside
 that path.
+
+## Skills
+
+- `core/skills/release-core/` — release the `core/` grouping: publish the `tx3-tir` crate at a developer gate; `tii`/`trp` are spec-only (pointer-advance, no publish). Instantiates the umbrella `grouping-contract.md`; invoked by the `release-toolchain` orchestrator or run standalone.

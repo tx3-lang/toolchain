@@ -22,13 +22,12 @@ working inside that group.
 - `lang/` → the Tx3 language: `tx3`. See [`lang/AGENTS.md`](./lang/AGENTS.md).
 - `tooling/` → toolchain binaries and developer tools: `trix`, `tx3up`, `tx3-lsp`, `tx3-mcp`, `tx3-lift`, `cshell`. See [`tooling/AGENTS.md`](./tooling/AGENTS.md).
 - `plugins/` → editor, CI, and agent integrations: `vscode-tx3`, `tx3-skills`, `actions`. See [`plugins/AGENTS.md`](./plugins/AGENTS.md).
-- `backends/` → transaction execution backends and gateways: `tx3-hydra`, `protocol-gateway`, `dolos`. See [`backends/AGENTS.md`](./backends/AGENTS.md).
+- `backends/` → TRP backends / runtime infrastructure that executes Tx3 transactions: `tx3-hydra`, `protocol-gateway`, `dolos`. See [`backends/AGENTS.md`](./backends/AGENTS.md).
 - `protocols/` → third-party Tx3 protocol definitions from the `open-tx3` org: `indigo`, `strike`, `bodega`, `fluid`, `vyfi`, `snek-fun`, `acme`, `githoney`, `txpipe`. See [`protocols/AGENTS.md`](./protocols/AGENTS.md).
+- `services/` → hosted products and surfaces we deploy and operate: `registry`, `docs`. See [`services/AGENTS.md`](./services/AGENTS.md).
 
-Two submodules and one subtree sit outside the groupings:
+One subtree sits outside the groupings:
 
-- `registry/` → [`tx3-lang/registry`](https://github.com/tx3-lang/registry) — registry of UTxO protocols: Rust backend, TS frontend, on-chain tracker, sample `.tx3` protocol data.
-- `docs/` → [`tx3-lang/docs`](https://github.com/tx3-lang/docs) — public docs.
 - `sdks/` → the Tx3 SDK fleet: `rust-sdk/`, `web-sdk/`, `go-sdk/`, `python-sdk/` submodules, plus the cross-cutting SDK spec, parity matrix, e2e scripts, and skills. See [`sdks/AGENTS.md`](./sdks/AGENTS.md).
 
 ## Routing a change
@@ -40,16 +39,15 @@ Route to a grouping, then consult that grouping's `AGENTS.md` for the specific s
 - `lang/` — the Tx3 language: parser, type system, codegen, semantics. See [`lang/AGENTS.md`](./lang/AGENTS.md).
 - `tooling/` — toolchain binaries and developer tools. See [`tooling/AGENTS.md`](./tooling/AGENTS.md).
 - `plugins/` — editor, CI, and agent integrations. See [`plugins/AGENTS.md`](./plugins/AGENTS.md).
-- `backends/` — transaction execution backends / gateways. See [`backends/AGENTS.md`](./backends/AGENTS.md).
+- `backends/` — TRP backends / runtime infrastructure. See [`backends/AGENTS.md`](./backends/AGENTS.md).
 - `protocols/` — third-party Tx3 protocol definitions from the `open-tx3` org. See [`protocols/AGENTS.md`](./protocols/AGENTS.md).
-- `registry/` — UTxO protocol registry application. Backend service (Rust, `backend/`), web frontend (TS, `frontend/`), on-chain tracker (`tracker/`), sample protocol files (`data/*.tx3`), and deployment glue (`bootstrap/`, `docker/`, `zot/`).
-- `docs/` — user-facing docs, tutorials, reference, examples.
+- `services/` — hosted products we deploy and operate: the `registry` app (`services/registry/`) and the `docs` site (`services/docs/`). See [`services/AGENTS.md`](./services/AGENTS.md).
 - `sdks/` — per-language SDKs (rust/web/go/python) and the fleet's spec, parity matrix, e2e scripts, and skills. See [`sdks/AGENTS.md`](./sdks/AGENTS.md).
 
 Every grouping `AGENTS.md`, and any individual submodule's own `AGENTS.md` / `CLAUDE.md` /
 `README.md`, overrides this file for work inside that path.
 
-Dependency direction for cross-cutting changes is typically `core/` → `lang/` → `tooling/` → `docs`. `plugins/`, `backends/`, `registry/`, `protocols/`, and `sdks/` are downstream consumers that exercise the toolchain against real protocols; treat them like `docs/` for ordering — bump after the upstream change lands.
+Dependency direction for cross-cutting changes is typically `core/` → `lang/` → `tooling/` → downstream consumers. `plugins/`, `backends/`, `services/`, `protocols/`, and `sdks/` consume the toolchain — bump them after the upstream change lands; within `services/`, the `docs` site publishes last.
 
 ## Skills
 
@@ -63,13 +61,27 @@ documented in `skills/<name>/SKILL.md` with:
 - **Decision Guidelines:** How to handle common decisions
 - **Safety Checks:** Verification steps before/during execution
 
-Available skills:
+A cross-cutting release is split along the grouping boundaries: `skills/release-toolchain/` is the
+**orchestrator**, and each grouping owns its own release sub-procedure (distributed under
+`<grouping>/skills/`, like `sdks/skills/`). The uniform contract every grouping skill instantiates is
+`skills/release-toolchain/grouping-contract.md`.
 
-- `skills/channel-version-update/` — update toolchain component versions by checking GitHub releases and updating the manifest files.
-- `skills/publish-docs-site/` — publish the latest Tx3 docs to the company-wide docs site (`docs.txpipe.io`) by triggering the `txpipe/docs` `update-submodules` workflow.
+Umbrella-level skills (top-level `skills/`):
+
+- `skills/release-toolchain/` — **orchestrator** for a cross-cutting toolchain release: detect which groupings have pending work, run each grouping's release skill in dependency order (`core → lang → sdks → tooling → {plugins, backends, registry} → protocols → docs`; `registry` & `docs` live in `services/`), thread published versions forward, and finalize via `commit-umbrella` → `channel-version-update` → `publish-docs-site`. Per-submodule publish mechanics live in the grouping skills, not here.
 - `skills/commit-umbrella/` — commit the umbrella repo after submodule pointers move, pre-checking that submodules are pushed, track latest `main`, and that grouping `AGENTS.md` routing is up to date.
+- `skills/channel-version-update/` — update toolchain component versions by checking GitHub releases and updating the manifest files.
 - `skills/add-language-feature/` — roll out a new Tx3 language feature (operator, expression form, builtin) across every toolchain layer: spec, grammar/AST, analysis/lowering, TIR/reduction, downstream consumers, docs, and agent skills.
-- `skills/release-toolchain/` — interactively orchestrate a cross-cutting toolchain release: sequence the crates.io publish waves (tir → tx3-lang & siblings → lsp/mcp/registry), bump dependency pins in lockstep, raise the `trix` version floor, and hand off to `commit-umbrella` for the pointer bump. Pauses at each publish gate for the developer.
+
+Per-grouping release skills (distributed under each grouping, like `sdks/skills/`):
+
+- `core/skills/release-core/` — publish the `tx3-tir` crate; `tii`/`trp` pointer-advance only.
+- `lang/skills/release-lang/` — publish `tx3-lang`/`tx3-cardano`/`tx3-resolver` + the `tx3c` binary.
+- `tooling/skills/release-tooling/` — `tx3-lsp`/`tx3-mcp`/`trix`/`tx3up`/`tx3-lift` releases + the `trix` compat floor.
+- `plugins/skills/release-plugins/` — marketplace publishes for `vscode-tx3`/`tx3-skills`/`actions`.
+- `backends/skills/release-backends/` — flag-and-defer lag report for `tx3-hydra`/`protocol-gateway` (deploy-only).
+- `protocols/skills/verify-protocols/` — verify `.tx3` fixtures against the new toolchain (no release).
+- `services/skills/` — `release-registry/` (release the registry app: `tx3-lang`+`tx3-tir` bump + `tx3-lift` git-rev advance) and `publish-docs-site/` (publish the docs site to `docs.txpipe.io`).
 - `sdks/skills/` — SDK-fleet skills (`add-sdk-feature`, `audit-parity`, `propagate-change`, `release-synced`, `release-sdk-patch`, `run-e2e-tests`, `scaffold-new-sdk`).
 
 ## Scope of this repo

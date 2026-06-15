@@ -13,3 +13,7 @@ have landed.
 
 A submodule's own `AGENTS.md` / `CLAUDE.md` / `README.md` overrides this file for work inside
 that path.
+
+## Skills
+
+- `plugins/skills/release-plugins/` — release the `plugins/` grouping: gate the out-of-band marketplace publishes (`vsce publish` for `vscode-tx3`, `plugin.json` bump for `tx3-skills`, `vN` major-tag move for `actions`) and refresh soft compat notes. Instantiates the umbrella `grouping-contract.md`; invoked by the `release-toolchain` orchestrator or run standalone.

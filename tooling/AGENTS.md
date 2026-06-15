@@ -14,3 +14,7 @@ Part of the Tx3 [`toolchain`](../AGENTS.md) umbrella. The `tooling/` grouping ho
 
 A submodule's own `AGENTS.md` / `CLAUDE.md` / `README.md` overrides this file for work inside
 that path.
+
+## Skills
+
+- `tooling/skills/release-tooling/` — release the `tooling/` grouping: bump pins to the published upstreams, raise the `trix` compat floor, and gate each tool's crate publish / binary tag (`tx3-lsp`, `tx3-mcp`, `trix`, `tx3up`, `tx3-lift`; `cshell` is third-party adopt-only). Instantiates the umbrella `grouping-contract.md`; invoked by the `release-toolchain` orchestrator or run standalone.

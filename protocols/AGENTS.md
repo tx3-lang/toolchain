@@ -19,3 +19,7 @@ on-chain Cardano protocol, used as real-world fixtures for the toolchain.
 
 A submodule's own `AGENTS.md` / `CLAUDE.md` / `README.md` overrides this file for work inside
 that path.
+
+## Skills
+
+- `protocols/skills/verify-protocols/` — verify (do not release) the `protocols/` grouping: re-check the `open-tx3` `.tx3` files parse/check against the newly released `tx3c` / `trix` and report breakages. The grouping's release-equivalent is verification; invoked by the `release-toolchain` orchestrator or run standalone.

@@ -10,3 +10,7 @@ language** itself. It depends on the `core/` specs and is consumed by everything
 
 A submodule's own `AGENTS.md` / `CLAUDE.md` / `README.md` overrides this file for work inside
 that path.
+
+## Skills
+
+- `lang/skills/release-lang/` — release the `lang/` grouping: one tag publishes the `tx3-lang` / `tx3-cardano` / `tx3-resolver` crates and the `tx3c` binary, after adopting the published `tx3-tir`. Instantiates the umbrella `grouping-contract.md`; invoked by the `release-toolchain` orchestrator or run standalone.
