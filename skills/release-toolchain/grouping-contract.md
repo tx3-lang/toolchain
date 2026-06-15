@@ -60,8 +60,9 @@ YAML frontmatter (`name`, `description`) then:
    versions, and the exact action (`cargo publish` / `cargo release <v>` / push tag `v<x.y.z>` /
    `vsce publish` / move `vN` tag …). **Then stop and wait.** The agent never publishes, tags, or moves
    marketplace artifacts — those are irreversible, outward-facing developer actions.
-5. **Verify the gate completed.** Confirm the crate is on crates.io (sparse index
-   `https://index.crates.io/<a>/<b>/<crate>`) and/or the tag/release exists
+5. **Verify the gate completed.** Confirm the crate is on crates.io with
+   [`crate-published.sh <crate> <version>`](./crate-published.sh) (it encodes the fiddly sparse-index
+   path layout so you never hand-write `<a>/<b>/<crate>`) and/or that the tag/release exists
    (`gh release view --repo <owner>/<repo> <tag>`) before emitting `Outputs`. `third-party-adopt`
    submodules skip this — they are adopt-only.
 6. **Report `Outputs`** in the form below.

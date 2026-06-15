@@ -40,8 +40,9 @@ Do not use for downstream groupings — `core` has no upstream, so it never adop
    > `cargo publish -p tx3-tir`), then confirm.
 
    **Stop and wait.** `tii`/`trp` have no gate — a spec change is just a merged file.
-5. **Verify.** Confirm `tx3-tir <version>` resolves on the sparse index
-   (`https://index.crates.io/tx/3-/tx3-tir`) before reporting.
+5. **Verify.** Confirm `tx3-tir <version>` resolves on the sparse index —
+   `bash skills/release-toolchain/crate-published.sh tx3-tir <version>` (exit 0 = published) —
+   before reporting.
 6. **Report Outputs.**
 
 ## Outputs

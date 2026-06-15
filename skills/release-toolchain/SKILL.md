@@ -82,16 +82,22 @@ reads the contract's Inputs/Outputs, not each grouping's internal mechanics.
 ## Procedure
 
 ### 0. Detect pending releasable work per grouping
-For each grouping, decide whether it has scope. Detection must be **grouping-type aware**:
-- cargo-dist / crate repos (`core/tir`, `lang/tx3`, `tooling/*`): compare the latest release
-  tag against `main` — commits ahead ⇒ pending; also flag pins lagging the about-to-publish upstreams.
-- spec / pointer / deploy repos (`core/tii`, `core/trp`, `plugins/*`, `services/registry`,
-  `services/docs`): `main` advanced past the umbrella pointer ⇒ pending (they have no release tags).
-  Also flag `services/registry` pins lagging the about-to-publish upstreams.
-- adopt-only / deploy-only repos (`tooling/cshell`, `backends/dolos`, `backends/{tx3-hydra,
-  protocol-gateway}`): never auto-detect as a *publish* — adopt upstream / flag-and-defer only.
+Run the mechanical scan — [`detect-pending.sh`](./detect-pending.sh) — which prints one type-aware
+line per submodule (the same grouping-type heuristics, applied uniformly so you don't re-derive
+tag/pointer diffs across ~30 repos by hand):
+```bash
+bash skills/release-toolchain/detect-pending.sh
+```
+- `release` repos (have `v*` tags — `core/tir`, `lang/tx3`, `tooling/*`, `sdks/*`, `plugins/actions`):
+  latest tag vs `main` — commits ahead ⇒ `PENDING`.
+- `pointer` repos (no tags — `core/tii`, `core/trp`, `plugins/tx3-skills`, `services/*`, `tooling/tx3-lift`):
+  `main` advanced past the umbrella pointer ⇒ `PENDING`.
+- `ADOPT-ONLY` (`tooling/cshell`, `backends/dolos`, `backends/{tx3-hydra,protocol-gateway}`) and
+  `VERIFY-ONLY` (`protocols/*`): never a publish — excluded from detection by the script.
 
-Produce a `pending` map keyed by grouping; empty groupings are skipped.
+The script reports the structural signal; **you** still overlay the runtime judgment it can't make:
+flag pins lagging the about-to-publish upstreams (esp. `services/registry`'s git-rev). Produce a
+`pending` map keyed by grouping from the `PENDING` lines; empty groupings are skipped.
 
 ### 1. Order the groupings
 Use the fixed topological order — the groupings are fixed, so this is not a computed DAG:
