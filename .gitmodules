@@ -7,7 +7,7 @@
 	url = git@github.com:tx3-lang/trix.git
 	branch = main
 [submodule "docs"]
-	path = docs
+	path = services/docs
 	url = git@github.com:tx3-lang/docs.git
 	branch = main
 [submodule "tii"]
@@ -23,7 +23,7 @@
 	url = git@github.com:tx3-lang/tir.git
 	branch = main
 [submodule "registry"]
-	path = registry
+	path = services/registry
 	url = git@github.com:tx3-lang/registry.git
 	branch = main
 [submodule "sdks/rust-sdk"]

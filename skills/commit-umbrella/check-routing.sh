@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Check 3 — every submodule path in .gitmodules is documented in the right AGENTS.md.
-# A submodule under <group>/… must appear in <group>/AGENTS.md; paths with no grouping
-# AGENTS.md (registry/, docs/) must appear in the root AGENTS.md. Matches either the
+# A submodule under <group>/… must appear in <group>/AGENTS.md; any path with no grouping
+# AGENTS.md falls back to the root AGENTS.md (currently none — every submodule lives under a
+# grouping, including services/registry and services/docs). Matches either the
 # full path (core/tii) or, as a fallback, the basename within the grouping doc, since
 # some groupings (e.g. sdks/) route by relative name (rust-sdk/). Run from the umbrella
 # repo root. Exits non-zero if any path is undocumented.
