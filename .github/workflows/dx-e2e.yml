@@ -4,11 +4,13 @@ name: DX E2E
 # (install the channel via tx3up, cache it, run one journey) live in the local
 # composite action .github/actions/dx-e2e-run.
 #
-#   - stable: a comprehensive pass over *every* journey. Edge journeys whose
-#     `#@ min-tx3c` exceeds stable's tx3c install + skip (green), and auto-run
-#     once the feature graduates to stable.
-#   - beta: cherry-picked *edge-feature* journeys only (e.g. 02-lang-tour's
-#     tuples) — stable already covers everything broadly.
+#   - stable: the offline scaffold gate + lang-surface journeys. Edge journeys
+#     whose `#@ min-tx3c` exceeds stable's tx3c install + skip (green), and
+#     auto-run once the feature graduates to stable.
+#   - beta: edge-feature journeys (e.g. 02-lang-tour's tuples), plus the devnet
+#     round-trip (04). The round-trip currently *fails* on released channels (a
+#     known, tracked trix bug fixed on main but unreleased) — intentionally red,
+#     not a tolerated xfail; it goes green once the fix ships to a channel.
 #
 # Compat lives in one place: the journey's `#@ min-tx3c` header, enforced by the
 # runner's skip gate. Native runners only — a DX test must exercise the real
@@ -56,7 +58,9 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
-        journey: [02-lang-tour, 03-lang-edge]   # cherry-pick: edge-feature journeys only
+        # edge-feature journeys + the devnet round-trip. The round-trip fails on
+        # released channels until the trix fix ships (intentionally red, not xfail).
+        journey: [02-lang-tour, 03-lang-edge, 04-devnet-roundtrip]
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/dx-e2e-run

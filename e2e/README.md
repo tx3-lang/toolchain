@@ -1,11 +1,10 @@
 # DX end-to-end tests
 
 These tests validate the **developer experience of the assembled toolchain**: that a
-developer who installs a channel and follows the normal journey
-(`init → check → build → test`, including a real local devnet round-trip) actually gets a
-working result. They exercise the real `trix`, `tx3c`, `dolos`, and `cshell` binaries
-together — interop that no single submodule's own tests cover. This is the umbrella's job,
-because only it knows the full channel composition (the `manifest-*.json` files) and is where
+developer who installs a channel and follows the normal flow (`init → check → build → test`)
+actually gets a working result. They exercise the real `trix`, `tx3c`, `dolos`, and `cshell`
+binaries together — interop that no single submodule's own tests cover. This is the umbrella's
+job, because only it knows the full channel composition (the `manifest-*.json` files) and is where
 releases are cut.
 
 This is deliberately *not* a duplicate of `tooling/trix/tests/e2e/`, which covers `trix init`
@@ -16,45 +15,33 @@ helper binaries.
 
 ```
 e2e/
-├── run.sh                          # entrypoint: resolve binaries, run journeys, summarize
-├── lib/common.sh                   # logging + fail-fast assertion helpers
+├── run.sh                       # entrypoint: resolve binaries, run journeys, summarize
+├── lib/common.sh                # logging + fail-fast assertion helpers
 └── journeys/
-    ├── 01-basic-init/journey.sh    # init → check → build → test (offline devnet round-trip)
-    └── 02-lang-tour/
-        ├── journey.sh              # init → swap in feature-dense main.tx3 → check → build → inspect tir
-        └── main.tx3                # feature-dense fixture (a copy of the lang's lang_tour example)
+    └── <NN>-<name>/
+        ├── journey.sh           # the journey script (sources lib/common.sh, drives trix)
+        ├── README.md            # what this journey covers, its scope, and any caveats
+        └── <fixtures>           # optional per-journey fixtures (e.g. a main.tx3)
 ```
 
 A **journey** is a self-contained script that sources `lib/common.sh` and drives `trix`
 with the assertion helpers. `run.sh` discovers every `journeys/*/journey.sh`, runs each in
 an isolated temp working directory, and prints a markdown pass/fail summary, exiting
-non-zero if any journey fails.
-
-The journeys cover complementary axes:
-
-| Journey | Covers | Scope |
-|---------|--------|-------|
-| **01-basic-init** | the default scaffold end to end, including a real devnet round-trip (trix + tx3c + dolos + cshell + resolver) | runtime |
-| **02-lang-tour** | the breadth of the language surface — env, records/variants, lists/maps/tuples, policies/assets, spread, locals, and the full Cardano construct set — pushed through `check → build → inspect tir` | compile/lower |
-| **03-lang-edge** | the *newest* language additions — user-defined functions, the `*`/`/` operators, parametric tuples (literals + indexing), and `///` doc-comments — pushed through `check → build → inspect tir` (needs tx3c ≥ 0.22) | compile/lower |
-
-`02-lang-tour` is compile/lower only: its feature-dense tx references hard-coded UTxOs, mints,
-and plutus scripts, so it can't resolve against a fresh devnet (the round-trip lives in 01).
+non-zero if any journey fails. **Each journey documents itself in its own `README.md`** — this
+top-level README only describes the harness.
 
 ## Channel-aware journeys
 
-A journey's fixture may use language features newer than an older channel's `tx3c` (e.g.
-`02-lang-tour` uses tuples, which need tx3c ≥ 0.22 — present on `beta`, not `stable`). A journey
-declares its floor with a header comment:
+A journey's fixture may use language features newer than an older channel's `tx3c`. A journey
+declares the minimum it needs with a header comment in its `journey.sh`:
 
 ```sh
 #@ min-tx3c: 0.22.0
 ```
 
 The runner reads the `tx3c` under test and **skips** (does not fail) any journey whose floor isn't
-met — `./e2e/run.sh --channel stable` runs `01-basic-init` and skips `02-lang-tour`, exiting 0.
-The gate is version-based so it **auto-heals**: when a feature graduates to `stable` (its `tx3c`
-bumps past the floor), the journey starts running there with no edit.
+met, exiting 0. The gate is version-based so it **auto-heals**: when a feature graduates to an older
+channel (its `tx3c` bumps past the floor), the journey starts running there with no edit.
 
 ## Which binaries get tested
 
@@ -74,9 +61,9 @@ respects `$HOME` on Unix). CI runners are already ephemeral, so they pass `--no-
 
 ## Running locally
 
-Prerequisites: `bash`, `git`, and the toolchain reachable in your chosen mode. The basic
-journey needs **no secrets and no network** beyond the one-time install — the devnet round-trip
-runs entirely on a local Dolos devnet with deterministic cshell wallets.
+Prerequisites: `bash`, `git`, and the toolchain reachable in your chosen mode. No journey needs
+secrets or a live network beyond the one-time install — runtime journeys run entirely on a local
+Dolos devnet with deterministic cshell wallets.
 
 ```sh
 # Test the toolchain you already have installed:
@@ -93,7 +80,7 @@ TX3_CSHELL_PATH=/path/to/cshell \
   ./e2e/run.sh --local
 
 # Run one journey with live output:
-./e2e/run.sh --journey 01-basic-init --verbose
+./e2e/run.sh --journey <name> --verbose
 ```
 
 Install `tx3up` (only needed for `--channel`) with the bootstrap script:
@@ -110,13 +97,9 @@ stable for CI upload.
 ## CI
 
 `.github/workflows/dx-e2e.yml` runs **one job per channel**, each an `{os × journey}` matrix over
-the native runners (`ubuntu-latest`, `ubuntu-24.04-arm`, `macos-latest`):
-
-- **`stable`** — a comprehensive pass over *every* journey. Edge journeys whose `#@ min-tx3c`
-  exceeds stable's `tx3c` install and **skip** (green), and start running automatically once the
-  feature graduates to stable (auto-heal).
-- **`beta`** — cherry-picked *edge-feature* journeys (the ones exercising features only on beta, like
-  `02-lang-tour`'s tuples). Stable already covers everything broadly, so beta stays focused.
+the native runners (`ubuntu-latest`, `ubuntu-24.04-arm`, `macos-latest`). The `stable` job runs the
+broad-coverage journeys; the `beta` job cherry-picks the ones exercising features (or fixes) that
+only beta has yet. The per-job journey lists live in the workflow itself.
 
 Compat lives in one place — the journey's `#@ min-tx3c` header, enforced by the runner's skip gate —
 so the workflow needs no per-cell compat config. The shared per-cell steps (install via tx3up, cache
@@ -125,15 +108,16 @@ Native runners only: a DX test must validate the real per-platform install, whic
 would misrepresent (and drop macOS). Triggers: pushes to `main` touching `manifest-*.json` /
 `e2e/**` / the workflow / the action; a nightly schedule; manual dispatch.
 
-No journey here needs secrets. Future live-network journeys would run in a separate, secrets-gated
-job.
+Journeys that need secrets (live network) would run in a separate, secrets-gated job.
 
 ## Adding a journey
 
 See the **`add-e2e-journey` skill** (`skills/add-e2e-journey/SKILL.md`) — the canonical guide for
-the journey contract, the `lib/common.sh` helper API, fixtures, and `xfail`. In brief: add a
-`journeys/<NN>-<name>/journey.sh` that sources `${E2E_LIB}` and drives `"${TRIX}"` with the
-assertion helpers, and `run.sh` discovers it automatically.
+the journey contract, the `lib/common.sh` helper API, fixtures, and capability gating. In brief: add
+a `journeys/<NN>-<name>/` directory with a `journey.sh` that sources `${E2E_LIB}` and drives
+`"${TRIX}"`, plus a `README.md` describing it, and `run.sh` discovers it automatically. Adding,
+removing, or modifying a journey is self-contained to its folder (and the workflow's journey list) —
+it should not touch this README.
 
 Planned journeys to grow coverage are tracked in
 [`plans/dx-e2e-journey-roadmap.md`](../plans/dx-e2e-journey-roadmap.md).
