@@ -124,18 +124,16 @@ inline (root cause + where it's tracked). The xfail auto-promotes to a hard fail
 bash -n e2e/journeys/<NN>-<name>/journey.sh           # syntax
 ./e2e/run.sh --journey <NN>-<name> --verbose          # this journey, streamed
 ./e2e/run.sh                                          # full suite still green
-./e2e/run.sh --list-json                              # journey appears with its min-tx3c
-# if you declared a floor, confirm the matrix gates it correctly:
-./scripts/dx-e2e-matrix.sh "ubuntu-latest" "stable beta" | python3 -m json.tool
+# if you declared a floor, confirm it skips on an older channel (exit 0, not fail):
+./e2e/run.sh --channel stable --journey <NN>-<name>   # expect ⏭ skip
 ```
 
 ### 7. Place it in CI
-`.github/workflows/dx-e2e.yml` builds an `{os × channel × journey}` matrix via `scripts/dx-e2e-matrix.sh`
-and picks up new journeys **automatically** — across every channel whose `tx3c` satisfies the
-journey's `#@ min-tx3c` (incompatible cells are never scheduled; below-floor channels are also
-skipped at runtime). Nothing to edit for an offline journey. Journeys that need **secrets** (live
-network) belong in a separate, secrets-gated job — gate them so the fast `01` cells stay quick and
-secret-free.
+`.github/workflows/dx-e2e.yml` runs a static `{os × channel × journey}` matrix — **add your journey
+to the `journey` list** in that matrix. It runs against every channel; below-floor channels just
+install and skip it (the runner's `#@ min-tx3c` gate), so no per-cell compat config is needed.
+Journeys that need **secrets** (live network) belong in a separate, secrets-gated job — gate them so
+the fast `01` cells stay quick and secret-free.
 
 ## Decision Guidelines
 - **Strict vs xfail**: assert strictly by default. Reach for `xfail_cmd` *only* for a known,

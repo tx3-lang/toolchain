@@ -53,8 +53,7 @@ declares its floor with a header comment:
 The runner reads the `tx3c` under test and **skips** (does not fail) any journey whose floor isn't
 met — `./e2e/run.sh --channel stable` runs `01-basic-init` and skips `02-lang-tour`, exiting 0.
 The gate is version-based so it **auto-heals**: when a feature graduates to `stable` (its `tx3c`
-bumps past the floor), the journey starts running there with no edit. `./e2e/run.sh --list-json`
-prints each journey and its `min-tx3c`.
+bumps past the floor), the journey starts running there with no edit.
 
 ## Which binaries get tested
 
@@ -109,18 +108,17 @@ stable for CI upload.
 
 ## CI
 
-`.github/workflows/dx-e2e.yml` runs channel mode on a **`{os × channel × journey}` matrix**. A
-`discover` job builds that matrix with `scripts/dx-e2e-matrix.sh` — the cross product of the OS
-list, the channel set (`stable` + `beta` by default), and the journeys, **minus** any combination
-whose channel can't satisfy a journey's `#@ min-tx3c` (so `stable × 02-lang-tour` is never
-scheduled). Each cell then installs that channel via tx3up and runs the single journey.
+`.github/workflows/dx-e2e.yml` runs a static **`{os × channel × journey}` cross-product** matrix
+(`os` = `ubuntu-latest` / `ubuntu-24.04-arm` / `macos-latest`; `channel` = `stable` + `beta`;
+`journey` = the journey list). Each cell installs that channel via tx3up and runs the single
+journey. Incompatible cells aren't special-cased — the runner's `#@ min-tx3c` gate just **skips**
+them (e.g. `stable × 02-lang-tour` installs stable and skips, green), so compat lives in one place.
+Each cell caches `~/.tx3/<channel>` (keyed on the channel manifest) to amortize installs.
 
-The matrix is native (`ubuntu-latest`, `ubuntu-24.04-arm`, `macos-latest`) — a DX test must
-validate the real per-platform install, which a Linux container would misrepresent (and drop macOS
-entirely). Each cell caches `~/.tx3/<channel>` (keyed on the channel manifest) to amortize installs
-across runs. Triggers: pushes to `main` touching `manifest-*.json` / `e2e/**` / the matrix script /
-the workflow; a nightly schedule; and manual dispatch with a `channel` input (space-separated, blank
-= default set).
+Native matrix only — a DX test must validate the real per-platform install, which a Linux container
+would misrepresent (and drop macOS). Triggers: pushes to `main` touching `manifest-*.json` /
+`e2e/**` / the workflow; a nightly schedule; manual dispatch. **Adding a journey** means adding it
+to the matrix `journey` list (and a channel to the `channel` list to test more channels).
 
 No journey here needs secrets. Future live-network journeys would run in a separate, secrets-gated
 job.

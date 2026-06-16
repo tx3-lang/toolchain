@@ -33,7 +33,6 @@ ISOLATE="auto"         # auto | yes | no (channel mode HOME isolation)
 VERBOSE="0"
 KEEP="0"
 ARTIFACTS_DIR=""
-LIST_JSON="0"
 
 usage() {
   sed -n '2,30p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
@@ -43,7 +42,6 @@ Options:
   --channel <ch>      Install + test a released channel via tx3up
   --local             Test locally-built binaries (TX3_*_PATH / PATH)
   --journey <name>    Run a single journey (directory name under journeys/)
-  --list-json         Print journeys + their min-tx3c as JSON and exit (no install)
   --no-isolate        Channel mode: install into the ambient $HOME (CI default)
   --isolate           Channel mode: install into a throwaway $HOME
   --artifacts-dir D   On failure, copy preserved logs/workdirs into D
@@ -60,7 +58,6 @@ while [[ $# -gt 0 ]]; do
     --channel)      MODE="channel"; CHANNEL="${2:-}"; shift 2 ;;
     --local)        MODE="local"; shift ;;
     --journey)      ONLY_JOURNEY="${2:-}"; shift 2 ;;
-    --list-json)    LIST_JSON="1"; shift ;;
     --isolate)      ISOLATE="yes"; shift ;;
     --no-isolate)   ISOLATE="no"; shift ;;
     --artifacts-dir) ARTIFACTS_DIR="${2:-}"; shift 2 ;;
@@ -75,27 +72,6 @@ done
 source "${LIB}"
 
 [[ "${MODE}" == "channel" && -z "${CHANNEL}" ]] && die "--channel requires a value (stable|beta|nightly)"
-
-# --- journey list (machine-readable) ---------------------------------------
-
-# `--list-json` emits each journey + its declared min-tx3c and exits, without
-# touching any binaries — the feed the CI matrix builder consumes.
-if [[ "${LIST_JSON}" == "1" ]]; then
-  out="["; sep=""
-  for d in "${JOURNEY_DIR}"/*/; do
-    [[ -f "${d}journey.sh" ]] || continue
-    n="$(basename "${d%/}")"
-    m="$(journey_min_tx3c "${d}journey.sh")"
-    if [[ -n "${m}" ]]; then
-      out+="${sep}{\"name\":\"${n}\",\"min_tx3c\":\"${m}\"}"
-    else
-      out+="${sep}{\"name\":\"${n}\",\"min_tx3c\":null}"
-    fi
-    sep=","
-  done
-  printf '%s]\n' "${out}"
-  exit 0
-fi
 
 # --- run root + cleanup ----------------------------------------------------
 
