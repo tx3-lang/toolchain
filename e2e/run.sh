@@ -178,6 +178,18 @@ export TRIX
 info "toolchain under test:"
 "${TRIX}" --version 2>&1 | sed 's/^/    /' || die "'${TRIX} --version' failed — toolchain not usable"
 
+# Resolve a tx3c for the per-journey capability gate (channel-aware skipping).
+case "${MODE}" in
+  channel) TX3C="${chan_bin}/tx3c" ;;
+  local)   TX3C="${TX3_TX3C_PATH:-}" ;;
+  path)    TX3C="${TX3_TX3C_PATH:-$(command -v tx3c 2>/dev/null || echo "${HOME}/.tx3/default/bin/tx3c")}" ;;
+esac
+TX3C_VERSION=""
+if [[ -n "${TX3C}" && -x "${TX3C}" ]]; then
+  TX3C_VERSION="$("${TX3C}" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n1)"
+fi
+[[ -n "${TX3C_VERSION}" ]] && info "tx3c ${TX3C_VERSION} (capability gate)"
+
 # --- journey discovery -----------------------------------------------------
 
 journeys=()
@@ -210,11 +222,21 @@ names=(); results=(); durations=()
 
 for jdir in "${journeys[@]}"; do
   name="$(basename "${jdir}")"
+
+  printf '\n%s──────── %s ────────%s\n' "${_C_DIM}" "${name}" "${_C_RESET}"
+
+  # Capability gate: skip (don't fail) a journey whose declared min-tx3c the
+  # channel under test can't satisfy. Fail-open when the tx3c version is unknown.
+  min_tx3c="$(journey_min_tx3c "${jdir}/journey.sh")"
+  if [[ -n "${min_tx3c}" && -n "${TX3C_VERSION}" ]] && ! version_ge "${TX3C_VERSION}" "${min_tx3c}"; then
+    skip "${name} — needs tx3c >= ${min_tx3c}, have ${TX3C_VERSION}"
+    names+=("${name}"); results+=("⏭ skip"); durations+=("-")
+    continue
+  fi
+
   workdir="${RUN_ROOT}/${name}"
   logfile="${RUN_ROOT}/${name}.log"
   mkdir -p "${workdir}"
-
-  printf '\n%s──────── %s ────────%s\n' "${_C_DIM}" "${name}" "${_C_RESET}"
   start="${SECONDS}"
 
   if [[ "${VERBOSE}" == "1" ]]; then
@@ -266,8 +288,17 @@ for i in "${!names[@]}"; do
 done
 echo
 
+passed=0; skipped=0; failed=0
+for r in "${results[@]}"; do
+  case "${r}" in
+    *pass*) passed=$((passed + 1)) ;;
+    *skip*) skipped=$((skipped + 1)) ;;
+    *fail*) failed=$((failed + 1)) ;;
+  esac
+done
+
 if [[ "${FAILED}" == "1" ]]; then
-  err "DX e2e: one or more journeys failed."
+  err "DX e2e: ${failed} failed, ${passed} passed, ${skipped} skipped."
   exit 1
 fi
-ok "DX e2e: all journeys passed."
+ok "DX e2e: ${passed} passed, ${skipped} skipped."

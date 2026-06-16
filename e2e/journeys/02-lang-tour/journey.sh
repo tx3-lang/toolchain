@@ -16,6 +16,10 @@
 # is no `trix test` step here (the round-trip lives in 01-basic-init).
 #
 # Run via e2e/run.sh, which provides $TRIX and an isolated working directory.
+#
+# Capability: tuples (Tuple<…> types, literals, and indexing) require tx3c >= 0.22,
+# so this journey is skipped on older channels (e.g. stable's 0.21).
+#@ min-tx3c: 0.22.0
 
 source "${E2E_LIB:?E2E_LIB not set — run this journey via e2e/run.sh}"
 

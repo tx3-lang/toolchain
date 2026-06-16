@@ -58,6 +58,12 @@ which the runner records as a failed journey. So a journey reads as a linear scr
 - **Scope**: a journey is either *runtime* (needs a working devnet round-trip, like `01`) or
   *compile/lower* (like `02`, which can't resolve against a fresh devnet). Pick one and say which
   in the banner.
+- **Capability gate**: if the journey's fixture uses a language feature newer than some channel's
+  `tx3c`, declare a floor with a header comment `#@ min-tx3c: <X.Y.Z>` (see `02-lang-tour`, which
+  needs tuples ⇒ tx3c ≥ 0.22). The runner *skips* (does not fail) the journey on channels below the
+  floor, and the CI matrix never schedules those `{channel, journey}` cells. It's version-based so
+  it auto-heals: when the feature graduates to an older channel, the journey starts running there
+  with no edit. Omit the header for journeys that work on every channel.
 
 ## Procedure
 
@@ -79,6 +85,9 @@ Skeleton (copy, then fill in):
 # <1–3 lines: what it covers and its scope (runtime vs compile/lower).>
 #
 # Run via e2e/run.sh, which provides $TRIX and an isolated working directory.
+#
+# Optional — only if the fixture needs a tx3c newer than some channel ships:
+#@ min-tx3c: 0.22.0
 
 source "${E2E_LIB:?E2E_LIB not set — run this journey via e2e/run.sh}"
 
@@ -115,12 +124,16 @@ inline (root cause + where it's tracked). The xfail auto-promotes to a hard fail
 bash -n e2e/journeys/<NN>-<name>/journey.sh           # syntax
 ./e2e/run.sh --journey <NN>-<name> --verbose          # this journey, streamed
 ./e2e/run.sh                                          # full suite still green
+# if you declared a floor, confirm it skips on an older channel (exit 0, not fail):
+./e2e/run.sh --channel stable --journey <NN>-<name>   # expect ⏭ skip
 ```
 
 ### 7. Place it in CI
-Offline journeys ride the default `.github/workflows/dx-e2e.yml` matrix automatically (they run
-once `run.sh` discovers them). Journeys that need **secrets** (live network) or are **slow** belong
-in a separate job/cadence — gate them so the fast `01` gate stays quick and secret-free.
+`.github/workflows/dx-e2e.yml` runs a static `{os × channel × journey}` matrix — **add your journey
+to the `journey` list** in that matrix. It runs against every channel; below-floor channels just
+install and skip it (the runner's `#@ min-tx3c` gate), so no per-cell compat config is needed.
+Journeys that need **secrets** (live network) belong in a separate, secrets-gated job — gate them so
+the fast `01` cells stay quick and secret-free.
 
 ## Decision Guidelines
 - **Strict vs xfail**: assert strictly by default. Reach for `xfail_cmd` *only* for a known,
