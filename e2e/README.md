@@ -118,10 +118,11 @@ the native runners (`ubuntu-latest`, `ubuntu-24.04-arm`, `macos-latest`):
   `02-lang-tour`'s tuples). Stable already covers everything broadly, so beta stays focused.
 
 Compat lives in one place — the journey's `#@ min-tx3c` header, enforced by the runner's skip gate —
-so the workflow needs no per-cell compat config. Each cell caches `~/.tx3/<channel>` (keyed on the
-channel manifest) to amortize installs. Native runners only: a DX test must validate the real
-per-platform install, which a Linux container would misrepresent (and drop macOS). Triggers: pushes
-to `main` touching `manifest-*.json` / `e2e/**` / the workflow; a nightly schedule; manual dispatch.
+so the workflow needs no per-cell compat config. The shared per-cell steps (install via tx3up, cache
+`~/.tx3/<channel>`, run one journey) live in the composite action `.github/actions/dx-e2e-run`.
+Native runners only: a DX test must validate the real per-platform install, which a Linux container
+would misrepresent (and drop macOS). Triggers: pushes to `main` touching `manifest-*.json` /
+`e2e/**` / the workflow / the action; a nightly schedule; manual dispatch.
 
 No journey here needs secrets. Future live-network journeys would run in a separate, secrets-gated
 job.

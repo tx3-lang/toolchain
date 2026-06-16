@@ -1,0 +1,52 @@
+name: 'Run DX e2e'
+description: 'Install a toolchain channel via tx3up and run one DX e2e journey.'
+
+inputs:
+  channel:
+    description: 'Toolchain channel to install and test (stable, beta, …).'
+    required: true
+  journey:
+    description: 'Journey directory name under e2e/journeys/.'
+    required: true
+  github-token:
+    description: "Token for tx3up's GitHub downloads (raises the rate limit)."
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Install tx3up
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        curl --proto '=https' --tlsv1.2 -LsSf \
+          https://github.com/tx3-lang/tx3up/releases/latest/download/tx3up-installer.sh | sh
+
+    - name: Put tx3up on PATH
+      shell: bash
+      run: |
+        echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+    - name: Cache channel toolchain
+      uses: actions/cache@v4
+      with:
+        path: ~/.tx3/${{ inputs.channel }}
+        key: tx3-${{ runner.os }}-${{ runner.arch }}-${{ inputs.channel }}-${{ hashFiles(format('manifest-{0}.json', inputs.channel)) }}
+
+    - name: Run DX e2e
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: ./e2e/run.sh --channel "${{ inputs.channel }}" --journey "${{ inputs.journey }}" --no-isolate --artifacts-dir "$RUNNER_TEMP/dx-e2e-artifacts"
+
+    - name: Upload artifacts on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: dx-e2e-${{ inputs.channel }}-${{ inputs.journey }}-${{ runner.os }}-${{ runner.arch }}
+        path: ${{ runner.temp }}/dx-e2e-artifacts
+        if-no-files-found: ignore
+        retention-days: 7
