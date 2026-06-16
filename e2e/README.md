@@ -30,12 +30,13 @@ with the assertion helpers. `run.sh` discovers every `journeys/*/journey.sh`, ru
 an isolated temp working directory, and prints a markdown pass/fail summary, exiting
 non-zero if any journey fails.
 
-The two journeys cover complementary axes:
+The journeys cover complementary axes:
 
 | Journey | Covers | Scope |
 |---------|--------|-------|
 | **01-basic-init** | the default scaffold end to end, including a real devnet round-trip (trix + tx3c + dolos + cshell + resolver) | runtime |
 | **02-lang-tour** | the breadth of the language surface — env, records/variants, lists/maps/tuples, policies/assets, spread, locals, and the full Cardano construct set — pushed through `check → build → inspect tir` | compile/lower |
+| **03-lang-edge** | the *newest* language additions — user-defined functions, the `*`/`/` operators, parametric tuples (literals + indexing), and `///` doc-comments — pushed through `check → build → inspect tir` (needs tx3c ≥ 0.22) | compile/lower |
 
 `02-lang-tour` is compile/lower only: its feature-dense tx references hard-coded UTxOs, mints,
 and plutus scripts, so it can't resolve against a fresh devnet (the round-trip lives in 01).

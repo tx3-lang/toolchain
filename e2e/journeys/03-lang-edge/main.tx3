@@ -1,0 +1,67 @@
+/// Edge-feature tour: the newest Tx3 language additions — user-defined
+/// functions, the `*` and `/` operators, and parametric tuples (with these
+/// doc-comments carried through into the TII).
+
+/// Funds the settlement.
+party Owner;
+
+/// Receives the settled amount.
+party Beneficiary;
+
+type Quote {
+    terms: Tuple<Int, Int>,
+}
+
+fn gross(amount: Int, bps: Int) -> Int {
+    amount * bps / 10000
+}
+
+fn net(amount: Int, bps: Int) -> Int {
+    let fee = gross(amount, bps);
+    amount - fee
+}
+
+/// Settle `amount`, paying a basis-point `rate` fee to the beneficiary.
+tx settle(
+    /// The notional amount to settle.
+    amount: Int,
+    /// The fee rate in basis points (250 = 2.5%).
+    rate: Int,
+) {
+    input source {
+        from: Owner,
+        min_amount: Ada(amount) + fees,
+    }
+
+    output {
+        to: Beneficiary,
+        amount: Ada(net(amount, rate)),
+        datum: Quote {
+            terms: (rate, gross(amount, rate)),
+        },
+    }
+
+    output {
+        to: Owner,
+        amount: source - Ada(net(amount, rate)) - fees,
+    }
+}
+
+/// Redeem a quote, indexing back into the stored tuple.
+tx redeem(
+    /// Bump added to the stored rate.
+    bump: Int,
+) {
+    input source {
+        from: Beneficiary,
+        datum_is: Quote,
+    }
+
+    output {
+        to: Owner,
+        amount: source - fees,
+        datum: Quote {
+            terms: (source.terms[0] + bump, source.terms[1] / 2),
+        },
+    }
+}

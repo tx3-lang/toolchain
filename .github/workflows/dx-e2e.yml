@@ -40,7 +40,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
-        journey: [01-basic-init, 02-lang-tour]   # comprehensive: every journey
+        journey: [01-basic-init, 02-lang-tour, 03-lang-edge]   # comprehensive: every journey
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/dx-e2e-run
@@ -56,7 +56,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
-        journey: [02-lang-tour]   # cherry-pick: edge-feature journeys only
+        journey: [02-lang-tour, 03-lang-edge]   # cherry-pick: edge-feature journeys only
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/dx-e2e-run
