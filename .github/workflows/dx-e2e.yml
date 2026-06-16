@@ -1,14 +1,21 @@
 name: DX E2E
 
-# Validates the DX of assembled toolchain channels on a static {os × channel ×
-# journey} matrix. Each cell installs that channel via tx3up and runs the one
-# journey; the runner skips (does not fail) journeys whose `#@ min-tx3c` floor the
-# channel can't meet — so e.g. the tuple-using lang-tour journey installs+skips on
-# stable (tx3c 0.21) and runs on beta (0.22). Compat lives in exactly one place:
-# the journey's min-tx3c header. Native matrix only — a DX test must exercise the
-# real per-platform install, which a Linux container can't.
+# One job per channel, each an {os × journey} matrix. The shared per-cell steps
+# (install the channel via tx3up, cache it, run one journey) live in the local
+# composite action .github/actions/dx-e2e-run.
 #
-# Adding a journey: add it to the matrix `journey` list below.
+#   - stable: a comprehensive pass over *every* journey. Edge journeys whose
+#     `#@ min-tx3c` exceeds stable's tx3c install + skip (green), and auto-run
+#     once the feature graduates to stable.
+#   - beta: cherry-picked *edge-feature* journeys only (e.g. 02-lang-tour's
+#     tuples) — stable already covers everything broadly.
+#
+# Compat lives in one place: the journey's `#@ min-tx3c` header, enforced by the
+# runner's skip gate. Native runners only — a DX test must exercise the real
+# per-platform install, which a Linux container can't.
+#
+# Adding a journey: add it to `stable`'s journey list (always); if it exercises a
+# beta-only feature, also add it to `beta`'s list.
 
 on:
   push:
@@ -17,6 +24,7 @@ on:
       - 'manifest-*.json'
       - 'e2e/**'
       - '.github/workflows/dx-e2e.yml'
+      - '.github/actions/dx-e2e-run/**'
   workflow_dispatch:
   schedule:
     - cron: '0 7 * * *'          # nightly drift check
@@ -25,44 +33,34 @@ permissions:
   contents: read
 
 jobs:
-  dx-e2e:
-    name: DX (${{ matrix.os }} · ${{ matrix.channel }} · ${{ matrix.journey }})
+  stable:
+    name: stable (${{ matrix.os }} · ${{ matrix.journey }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
-        channel: [stable, beta]
-        journey: [01-basic-init, 02-lang-tour]
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # raises tx3up's GitHub rate limit
+        journey: [01-basic-init, 02-lang-tour, 03-lang-edge]   # comprehensive: every journey
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install tx3up
-        run: |
-          curl --proto '=https' --tlsv1.2 -LsSf \
-            https://github.com/tx3-lang/tx3up/releases/latest/download/tx3up-installer.sh | sh
-
-      - name: Put tx3up on PATH
-        run: |
-          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
-      - name: Cache channel toolchain
-        uses: actions/cache@v4
+      - uses: ./.github/actions/dx-e2e-run
         with:
-          path: ~/.tx3/${{ matrix.channel }}
-          key: tx3-${{ runner.os }}-${{ runner.arch }}-${{ matrix.channel }}-${{ hashFiles(format('manifest-{0}.json', matrix.channel)) }}
+          channel: stable
+          journey: ${{ matrix.journey }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run DX e2e
-        run: ./e2e/run.sh --channel "${{ matrix.channel }}" --journey "${{ matrix.journey }}" --no-isolate --artifacts-dir "$RUNNER_TEMP/dx-e2e-artifacts"
-
-      - name: Upload artifacts on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
+  beta:
+    name: beta (${{ matrix.os }} · ${{ matrix.journey }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
+        journey: [02-lang-tour, 03-lang-edge]   # cherry-pick: edge-feature journeys only
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/dx-e2e-run
         with:
-          name: dx-e2e-${{ matrix.os }}-${{ matrix.channel }}-${{ matrix.journey }}
-          path: ${{ runner.temp }}/dx-e2e-artifacts
-          if-no-files-found: ignore
-          retention-days: 7
+          channel: beta
+          journey: ${{ matrix.journey }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
