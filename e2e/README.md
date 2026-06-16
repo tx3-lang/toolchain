@@ -19,10 +19,12 @@ e2e/
 ├── run.sh                          # entrypoint: resolve binaries, run journeys, summarize
 ├── lib/common.sh                   # logging + fail-fast assertion helpers
 └── journeys/
-    ├── 01-basic-init/journey.sh    # init → check → build → test (offline devnet round-trip)
-    └── 02-lang-tour/
-        ├── journey.sh              # init → swap in feature-dense main.tx3 → check → build → inspect tir
-        └── main.tx3                # feature-dense fixture (a copy of the lang's lang_tour example)
+    ├── 01-basic-init/journey.sh        # init → check → build (offline scaffold validation)
+    ├── 02-lang-tour/
+    │   ├── journey.sh                  # init → swap in feature-dense main.tx3 → check → build → inspect tir
+    │   └── main.tx3                    # feature-dense fixture (a copy of the lang's lang_tour example)
+    ├── 03-lang-edge/                   # newest lang features (functions, operators, tuples, doc-comments)
+    └── 04-devnet-roundtrip/journey.sh  # init → test (real devnet round-trip: trix + tx3c + dolos + cshell)
 ```
 
 A **journey** is a self-contained script that sources `lib/common.sh` and drives `trix`
@@ -34,12 +36,14 @@ The journeys cover complementary axes:
 
 | Journey | Covers | Scope |
 |---------|--------|-------|
-| **01-basic-init** | the default scaffold end to end, including a real devnet round-trip (trix + tx3c + dolos + cshell + resolver) | runtime |
+| **01-basic-init** | the default scaffold through `init → check → build` — the fast, fully offline gate | compile/lower |
 | **02-lang-tour** | the breadth of the language surface — env, records/variants, lists/maps/tuples, policies/assets, spread, locals, and the full Cardano construct set — pushed through `check → build → inspect tir` | compile/lower |
 | **03-lang-edge** | the *newest* language additions — user-defined functions, the `*`/`/` operators, parametric tuples (literals + indexing), and `///` doc-comments — pushed through `check → build → inspect tir` (needs tx3c ≥ 0.22) | compile/lower |
+| **04-devnet-roundtrip** | a real devnet round-trip on the default scaffold (`trix test`) — spins a local Dolos devnet, restores cshell wallets, submits the scaffolded transfers, asserts balances; exercises trix + tx3c + dolos + cshell + resolver together | runtime |
 
 `02-lang-tour` is compile/lower only: its feature-dense tx references hard-coded UTxOs, mints,
-and plutus scripts, so it can't resolve against a fresh devnet (the round-trip lives in 01).
+and plutus scripts, so it can't resolve against a fresh devnet (the round-trip lives in
+`04-devnet-roundtrip`).
 
 ## Channel-aware journeys
 
@@ -112,11 +116,13 @@ stable for CI upload.
 `.github/workflows/dx-e2e.yml` runs **one job per channel**, each an `{os × journey}` matrix over
 the native runners (`ubuntu-latest`, `ubuntu-24.04-arm`, `macos-latest`):
 
-- **`stable`** — a comprehensive pass over *every* journey. Edge journeys whose `#@ min-tx3c`
-  exceeds stable's `tx3c` install and **skip** (green), and start running automatically once the
-  feature graduates to stable (auto-heal).
-- **`beta`** — cherry-picked *edge-feature* journeys (the ones exercising features only on beta, like
-  `02-lang-tour`'s tuples). Stable already covers everything broadly, so beta stays focused.
+- **`stable`** — the offline scaffold gate (`01-basic-init`) plus the lang-surface journeys. Edge
+  journeys whose `#@ min-tx3c` exceeds stable's `tx3c` install **skip** (green), and start running
+  automatically once the feature graduates to stable (auto-heal).
+- **`beta`** — the *edge-feature* journeys (the ones exercising features only on beta, like
+  `02-lang-tour`'s tuples), plus `04-devnet-roundtrip`. The devnet round-trip is parked on beta for
+  now: it's `xfail` on released channels until the trix expect/balance fix ships, and beta gets that
+  release first.
 
 Compat lives in one place — the journey's `#@ min-tx3c` header, enforced by the runner's skip gate —
 so the workflow needs no per-cell compat config. The shared per-cell steps (install via tx3up, cache

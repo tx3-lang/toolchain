@@ -133,7 +133,10 @@ bash -n e2e/journeys/<NN>-<name>/journey.sh           # syntax
 journey to the `stable` job's `journey` list** (the comprehensive pass — below-floor journeys just
 install and skip via the `#@ min-tx3c` gate). **Also add it to the `beta` job's list only if it
 exercises a beta-only / edge feature** (`beta` is a focused cherry-pick, not the full suite).
-Journeys that need **secrets** (live network) belong in a separate, secrets-gated job.
+A journey can also be *parked* on `beta` alone when it depends on a toolchain fix that only beta has
+yet (e.g. `04-devnet-roundtrip`, an `xfail` round-trip on released channels until the trix fix ships)
+— move it onto `stable` once the fix is released there. Journeys that need **secrets** (live network)
+belong in a separate, secrets-gated job.
 
 ## Decision Guidelines
 - **Strict vs xfail**: assert strictly by default. Reach for `xfail_cmd` *only* for a known,
