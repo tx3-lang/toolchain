@@ -1,0 +1,70 @@
+name: DX E2E
+
+# Validates the developer experience of an assembled toolchain channel: install
+# via tx3up, then run the umbrella `e2e/` journeys (init → check → build → test,
+# a real local devnet round-trip) against the real trix/tx3c/dolos/cshell binaries.
+#
+# Native matrix only — a DX test must exercise the real per-platform install, so
+# no containers (a Linux container would drop macOS and misrepresent the install).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'manifest-*.json'        # gate the channel being shipped
+      - 'e2e/**'
+      - '.github/workflows/dx-e2e.yml'
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: 'Toolchain channel to test'
+        required: false
+        default: 'stable'
+        type: choice
+        options: [stable, beta, nightly]
+  schedule:
+    - cron: '0 7 * * *'          # nightly drift check on the stable channel
+
+permissions:
+  contents: read
+
+jobs:
+  dx-e2e:
+    name: DX (${{ matrix.runner }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner:
+          - ubuntu-latest
+          - ubuntu-24.04-arm
+          - macos-latest
+    env:
+      CHANNEL: ${{ inputs.channel || 'stable' }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # raises tx3up's GitHub rate limit
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install tx3up
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf \
+            https://github.com/tx3-lang/tx3up/releases/latest/download/tx3up-installer.sh | sh
+
+      - name: Put tx3up on PATH
+        run: |
+          # cargo-dist's shell installer drops the binary in one of these.
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Run DX e2e (${{ env.CHANNEL }})
+        run: ./e2e/run.sh --channel "$CHANNEL" --no-isolate --artifacts-dir "$RUNNER_TEMP/dx-e2e-artifacts"
+
+      - name: Upload artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dx-e2e-${{ matrix.runner }}
+          path: ${{ runner.temp }}/dx-e2e-artifacts
+          if-no-files-found: ignore
+          retention-days: 7
