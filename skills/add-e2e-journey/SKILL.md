@@ -129,11 +129,11 @@ bash -n e2e/journeys/<NN>-<name>/journey.sh           # syntax
 ```
 
 ### 7. Place it in CI
-`.github/workflows/dx-e2e.yml` runs a static `{os × channel × journey}` matrix — **add your journey
-to the `journey` list** in that matrix. It runs against every channel; below-floor channels just
-install and skip it (the runner's `#@ min-tx3c` gate), so no per-cell compat config is needed.
-Journeys that need **secrets** (live network) belong in a separate, secrets-gated job — gate them so
-the fast `01` cells stay quick and secret-free.
+`.github/workflows/dx-e2e.yml` has one job per channel, each an `{os × journey}` matrix. **Add your
+journey to the `stable` job's `journey` list** (the comprehensive pass — below-floor journeys just
+install and skip via the `#@ min-tx3c` gate). **Also add it to the `beta` job's list only if it
+exercises a beta-only / edge feature** (`beta` is a focused cherry-pick, not the full suite).
+Journeys that need **secrets** (live network) belong in a separate, secrets-gated job.
 
 ## Decision Guidelines
 - **Strict vs xfail**: assert strictly by default. Reach for `xfail_cmd` *only* for a known,

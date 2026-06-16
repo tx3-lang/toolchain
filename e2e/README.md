@@ -108,17 +108,20 @@ stable for CI upload.
 
 ## CI
 
-`.github/workflows/dx-e2e.yml` runs a static **`{os × channel × journey}` cross-product** matrix
-(`os` = `ubuntu-latest` / `ubuntu-24.04-arm` / `macos-latest`; `channel` = `stable` + `beta`;
-`journey` = the journey list). Each cell installs that channel via tx3up and runs the single
-journey. Incompatible cells aren't special-cased — the runner's `#@ min-tx3c` gate just **skips**
-them (e.g. `stable × 02-lang-tour` installs stable and skips, green), so compat lives in one place.
-Each cell caches `~/.tx3/<channel>` (keyed on the channel manifest) to amortize installs.
+`.github/workflows/dx-e2e.yml` runs **one job per channel**, each an `{os × journey}` matrix over
+the native runners (`ubuntu-latest`, `ubuntu-24.04-arm`, `macos-latest`):
 
-Native matrix only — a DX test must validate the real per-platform install, which a Linux container
-would misrepresent (and drop macOS). Triggers: pushes to `main` touching `manifest-*.json` /
-`e2e/**` / the workflow; a nightly schedule; manual dispatch. **Adding a journey** means adding it
-to the matrix `journey` list (and a channel to the `channel` list to test more channels).
+- **`stable`** — a comprehensive pass over *every* journey. Edge journeys whose `#@ min-tx3c`
+  exceeds stable's `tx3c` install and **skip** (green), and start running automatically once the
+  feature graduates to stable (auto-heal).
+- **`beta`** — cherry-picked *edge-feature* journeys (the ones exercising features only on beta, like
+  `02-lang-tour`'s tuples). Stable already covers everything broadly, so beta stays focused.
+
+Compat lives in one place — the journey's `#@ min-tx3c` header, enforced by the runner's skip gate —
+so the workflow needs no per-cell compat config. Each cell caches `~/.tx3/<channel>` (keyed on the
+channel manifest) to amortize installs. Native runners only: a DX test must validate the real
+per-platform install, which a Linux container would misrepresent (and drop macOS). Triggers: pushes
+to `main` touching `manifest-*.json` / `e2e/**` / the workflow; a nightly schedule; manual dispatch.
 
 No journey here needs secrets. Future live-network journeys would run in a separate, secrets-gated
 job.
