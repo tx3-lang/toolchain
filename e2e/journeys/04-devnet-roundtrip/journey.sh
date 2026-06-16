@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 #
-# Journey 04 — devnet round-trip. See README.md for what this covers (and why
-# it currently fails on released channels).
+# Journey 04 — devnet round-trip. See README.md for what this covers.
 # Run via e2e/run.sh, which provides $TRIX and an isolated working directory.
 
 source "${E2E_LIB:?E2E_LIB not set — run this journey via e2e/run.sh}"
