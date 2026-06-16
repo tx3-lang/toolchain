@@ -1,24 +1,8 @@
 #!/usr/bin/env bash
 #
-# Journey 02 — language tour.
-#
-# Coverage journey: swap the default scaffold's main.tx3 for a deliberately
-# feature-dense protocol (this directory's main.tx3, a copy of the lang's
-# lang_tour example) and push it through the full compile + lower pipeline. It
-# exercises the breadth of the language surface — env block, records, variants,
-# lists/maps/tuples, policies & assets, record spread, locals, and the whole
-# Cardano construct set (mint/burn, collateral, reference, withdrawal, the
-# certificate forms, plutus/native witnesses, treasury donation, metadata,
-# validity) — that the basic-init journey never touches.
-#
-# Scope is compile/lower only: the tx references hard-coded UTxOs, mints, and
-# plutus scripts, so it cannot resolve against a fresh devnet — that's why there
-# is no `trix test` step here (the round-trip lives in 01-basic-init).
-#
+# Journey 02 — language tour. See README.md for what this covers.
 # Run via e2e/run.sh, which provides $TRIX and an isolated working directory.
 #
-# Capability: tuples (Tuple<…> types, literals, and indexing) require tx3c >= 0.22,
-# so this journey is skipped on older channels (e.g. stable's 0.21).
 #@ min-tx3c: 0.22.0
 
 source "${E2E_LIB:?E2E_LIB not set — run this journey via e2e/run.sh}"

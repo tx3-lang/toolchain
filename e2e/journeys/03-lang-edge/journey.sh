@@ -1,16 +1,6 @@
 #!/usr/bin/env bash
 #
-# Journey 03 — language edge.
-#
-# Coverage journey focused on the *newest* language-level additions, the
-# complement to 02-lang-tour's broad surface: user-defined functions (`fn` with
-# `let`), the `*` and `/` operators, parametric tuples (`Tuple<…>` types,
-# literals, and indexing), and `///` doc-comments. Swaps in this directory's
-# feature-dense main.tx3 and pushes it through compile + lower.
-#
-# Scope is compile/lower only (no devnet round-trip). These features need
-# tx3c >= 0.22, so the journey is skipped on older channels (e.g. stable's 0.21).
-#
+# Journey 03 — language edge. See README.md for what this covers.
 # Run via e2e/run.sh, which provides $TRIX and an isolated working directory.
 #
 #@ min-tx3c: 0.22.0

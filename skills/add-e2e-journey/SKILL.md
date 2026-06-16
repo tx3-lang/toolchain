@@ -75,18 +75,23 @@ round-trip or compile/lower only? This determines the steps and the CI placement
 ```bash
 mkdir -p e2e/journeys/<NN>-<name>
 $EDITOR e2e/journeys/<NN>-<name>/journey.sh
+$EDITOR e2e/journeys/<NN>-<name>/README.md      # what it covers, scope, caveats
 chmod +x e2e/journeys/<NN>-<name>/journey.sh
 ```
+Give the journey a `README.md` — that's where *all* journey-specific description lives (what it
+covers, its scope, capability floor, and any caveats like a known failure). The top-level
+`e2e/README.md` describes only the harness and must not be edited when you add a journey. Keep the
+`journey.sh` header to a one-liner that points at the README.
+
 Skeleton (copy, then fill in):
 ```bash
 #!/usr/bin/env bash
 #
-# Journey <NN> — <title>.
-# <1–3 lines: what it covers and its scope (runtime vs compile/lower).>
-#
+# Journey <NN> — <title>. See README.md for what this covers.
 # Run via e2e/run.sh, which provides $TRIX and an isolated working directory.
 #
-# Optional — only if the fixture needs a tx3c newer than some channel ships:
+# Optional — only if the fixture needs a tx3c newer than some channel ships
+# (this header is machine-read by run.sh, so it must live here, not in README):
 #@ min-tx3c: 0.22.0
 
 source "${E2E_LIB:?E2E_LIB not set — run this journey via e2e/run.sh}"
@@ -156,7 +161,7 @@ belong in a separate, secrets-gated job.
 - The new journey is green **in isolation** (`--journey`) and in the **full suite**.
 - **Hermetic**: after the run, no stray `dolos` daemon survives (`pgrep -fl 'dolos.*daemon'`) and,
   for channel mode, `~/.tx3/default` is unchanged (channel mode must never run `tx3up use`).
-- Update `e2e/README.md`'s journey table/layout to list the new journey (the table is reference;
-  the how-to stays here).
+- The journey folder has a `README.md` describing it. **Do not edit the top-level `e2e/README.md`** —
+  it describes only the harness; journey specifics live in the journey folder.
 - If the journey brackets a new xfail, record the bug in `plans/` and a memory note so its
   promotion is tracked.

@@ -1,12 +1,6 @@
 #!/usr/bin/env bash
 #
-# Journey 01 — basic init.
-#
-# The fast, fully offline gate (no secrets, no network beyond the one-time
-# install): scaffold the default project, validate it through tx3c, and compile
-# it to the Transaction Invocation Interface. The real devnet round-trip lives in
-# 04-devnet-roundtrip.
-#
+# Journey 01 — basic init. See README.md for what this covers.
 # Run via e2e/run.sh, which provides $TRIX and an isolated working directory.
 
 source "${E2E_LIB:?E2E_LIB not set — run this journey via e2e/run.sh}"
