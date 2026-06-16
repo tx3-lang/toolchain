@@ -27,8 +27,27 @@ info() { printf '%s   %s%s\n' "${_C_BLUE}" "$*" "${_C_RESET}"; }
 ok()   { printf '%s ✔ %s%s\n' "${_C_GREEN}" "$*" "${_C_RESET}"; }
 warn() { printf '%s ! %s%s\n' "${_C_YELLOW}" "$*" "${_C_RESET}"; }
 err()  { printf '%s ✗ %s%s\n' "${_C_RED}" "$*" "${_C_RESET}" >&2; }
+skip() { printf '%s ⏭ %s%s\n' "${_C_YELLOW}" "$*" "${_C_RESET}"; }
 
 die() { err "$*"; exit 1; }
+
+# --- capability gating -----------------------------------------------------
+
+# version_ge <have> <min> — true if semver <have> >= <min>. Fail-open: an empty
+# <min> (no floor) or empty <have> (unknown version) is treated as compatible,
+# so we never silently skip when we can't tell.
+version_ge() {
+  local have="$1" min="$2"
+  [[ -z "${min}" || -z "${have}" ]] && return 0
+  [[ "$(printf '%s\n%s\n' "${min}" "${have}" | sort -V | head -n1)" == "${min}" ]]
+}
+
+# journey_min_tx3c <journey.sh> — echo the journey's declared `#@ min-tx3c:`
+# floor (a journey runs only on channels whose tx3c is at least this), or empty.
+journey_min_tx3c() {
+  sed -n 's/^#@[[:space:]]*min-tx3c:[[:space:]]*//p' "$1" 2>/dev/null \
+    | head -n1 | tr -d '[:space:]'
+}
 
 # Captured combined output of the most recent `run_cmd`, for assert_output_*.
 LAST_OUTPUT_FILE="${LAST_OUTPUT_FILE:-${PWD}/.last_cmd_output}"

@@ -38,8 +38,23 @@ The two journeys cover complementary axes:
 | **02-lang-tour** | the breadth of the language surface — env, records/variants, lists/maps/tuples, policies/assets, spread, locals, and the full Cardano construct set — pushed through `check → build → inspect tir` | compile/lower |
 
 `02-lang-tour` is compile/lower only: its feature-dense tx references hard-coded UTxOs, mints,
-and plutus scripts, so it can't resolve against a fresh devnet (the round-trip lives in 01). Its
-fixture tracks current language features, so it may outpace an older channel's `tx3c`.
+and plutus scripts, so it can't resolve against a fresh devnet (the round-trip lives in 01).
+
+## Channel-aware journeys
+
+A journey's fixture may use language features newer than an older channel's `tx3c` (e.g.
+`02-lang-tour` uses tuples, which need tx3c ≥ 0.22 — present on `beta`, not `stable`). A journey
+declares its floor with a header comment:
+
+```sh
+#@ min-tx3c: 0.22.0
+```
+
+The runner reads the `tx3c` under test and **skips** (does not fail) any journey whose floor isn't
+met — `./e2e/run.sh --channel stable` runs `01-basic-init` and skips `02-lang-tour`, exiting 0.
+The gate is version-based so it **auto-heals**: when a feature graduates to `stable` (its `tx3c`
+bumps past the floor), the journey starts running there with no edit. `./e2e/run.sh --list-json`
+prints each journey and its `min-tx3c`.
 
 ## Which binaries get tested
 
@@ -94,17 +109,21 @@ stable for CI upload.
 
 ## CI
 
-`.github/workflows/dx-e2e.yml` runs the harness in **channel** mode on the native matrix
-(`ubuntu-latest`, `ubuntu-24.04-arm`, `macos-latest`) — native because a DX test must validate
-the real per-platform install experience, which a Linux container would misrepresent (and drop
-macOS entirely). It triggers on:
+`.github/workflows/dx-e2e.yml` runs channel mode on a **`{os × channel × journey}` matrix**. A
+`discover` job builds that matrix with `scripts/dx-e2e-matrix.sh` — the cross product of the OS
+list, the channel set (`stable` + `beta` by default), and the journeys, **minus** any combination
+whose channel can't satisfy a journey's `#@ min-tx3c` (so `stable × 02-lang-tour` is never
+scheduled). Each cell then installs that channel via tx3up and runs the single journey.
 
-- pushes to `main` that touch `manifest-*.json` — gate that the channel being shipped works;
-- a nightly schedule — catch drift in already-released channels / upstream services;
-- manual dispatch with a `channel` input.
+The matrix is native (`ubuntu-latest`, `ubuntu-24.04-arm`, `macos-latest`) — a DX test must
+validate the real per-platform install, which a Linux container would misrepresent (and drop macOS
+entirely). Each cell caches `~/.tx3/<channel>` (keyed on the channel manifest) to amortize installs
+across runs. Triggers: pushes to `main` touching `manifest-*.json` / `e2e/**` / the matrix script /
+the workflow; a nightly schedule; and manual dispatch with a `channel` input (space-separated, blank
+= default set).
 
-The basic journey needs no secrets. Future live-network journeys would run in a separate,
-secrets-gated job.
+No journey here needs secrets. Future live-network journeys would run in a separate, secrets-gated
+job.
 
 ## Adding a journey
 
