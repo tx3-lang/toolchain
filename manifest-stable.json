@@ -44,6 +44,13 @@
       "repo_name": "cshell",
       "repo_owner": "txpipe",
       "version": "^0.14.0"
+    },
+    {
+      "name": "preflight",
+      "description": "Aiken smart contract vulnerability auditor",
+      "repo_name": "preflight",
+      "repo_owner": "tx3-lang",
+      "version": "^0.1"
     }
   ]
 }
