@@ -1,0 +1,133 @@
+env {
+    field_a: Int,
+    field_b: Bytes,
+    field_c: Bool,
+    field_d: List<Bytes>,
+}
+
+party MyParty;
+
+type MyRecord {
+    field1: Int,
+    field2: Bytes,
+    field3: Bytes,
+    field4: List<Int>,
+    field5: Map<Int, Bytes>,
+    field6: Tuple<Int, Bytes>,
+}
+
+type MyVariant {
+    Case1 {
+        field1: Int,
+        field2: Bytes,
+        field3: Int,
+    },
+    Case2,
+}
+
+policy OnlyHashPolicy = 0xABCDEF1234;
+
+asset StaticAsset = 0xABCDEF1234."MYTOKEN";
+
+policy FullyDefinedPolicy {
+    hash: 0xABCDEF1234,
+    script: 0xABCDEF1234,
+    ref: 0xABCDEF1234,
+}
+
+tx my_tx(
+    quantity: Int,
+    validUntil: Int,
+    metadata: Bytes,
+) {
+    input source {
+        from: MyParty,
+        datum_is: MyRecord,
+        min_amount: Ada(quantity) + min_utxo(named_output),
+        redeemer: MyVariant::Case1 {
+            field1: field_a,
+            field2: 0xAFAFAF,
+            field3: quantity,
+        },
+    }
+
+    mint {
+        amount: StaticAsset(100),
+        redeemer: (),
+    }
+
+    mint {
+        amount: AnyAsset(0xAB11223344, "OTHER_TOKEN", 10),
+        redeemer: (),
+    }
+
+    burn {
+        amount: StaticAsset(50),
+        redeemer: (),
+    }
+
+    collateral {
+        ref: 0xABCDEF#1,
+    }
+
+    reference ref_block {
+        ref: 0xABCDEF#2,
+    }
+
+    output named_output {
+        to: MyParty,
+        datum: MyRecord {
+            field1: quantity,
+            field2: (54 + 10) - (8 + 2),
+            field4: [1, 2, 3, source.field1],
+            field5: {1: "Value1", 2: "Value2",},
+            field6: (quantity, 0xAABB),
+            ...source
+        },
+        amount: AnyAsset(source.field3, source.field2, source.field1) + Ada(40) + min_utxo(named_output),
+    }
+
+    signers {
+        MyParty,
+        0x0F5B22E57FEEB5B4FD1D501B007A427C56A76884D4978FAFEF979D9C,
+    }
+
+    validity {
+        since_slot: tip_slot(),
+        until_slot: validUntil,
+    }
+
+    metadata {
+        1: metadata,
+        2: "Additional Metadata",
+    }
+
+    locals {
+        local_var: concat("Lang", "Tour"),
+        tuple_first: source.field6[0],
+    }
+
+    cardano::vote_delegation_certificate {
+        drep: 0x12345678,
+        stake: 0x87654321,
+    }
+
+    cardano::withdrawal {
+        from: MyParty,
+        amount: 100,
+        redeemer: (),
+    }
+
+    cardano::plutus_witness {
+        version: 2,
+        script: 0xABCDEF1234,
+    }
+
+    cardano::native_witness {
+        script: 0x12345678,
+    }
+
+    cardano::treasury_donation {
+        coin: 500,
+    }
+}

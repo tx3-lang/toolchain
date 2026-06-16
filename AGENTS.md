@@ -72,6 +72,7 @@ Umbrella-level skills (top-level `skills/`):
 - `skills/commit-umbrella/` — commit the umbrella repo after submodule pointers move, pre-checking that submodules are pushed, track latest `main`, and that grouping `AGENTS.md` routing is up to date.
 - `skills/channel-version-update/` — update toolchain component versions by checking GitHub releases and updating the manifest files.
 - `skills/add-language-feature/` — roll out a new Tx3 language feature (operator, expression form, builtin) across every toolchain layer: spec, grammar/AST, analysis/lowering, TIR/reduction, downstream consumers, docs, and agent skills.
+- `skills/add-e2e-journey/` — add a journey to the umbrella DX e2e harness (`e2e/`); the canonical guide for the journey contract and the `lib/common.sh` helper API.
 
 Per-grouping release skills (distributed under each grouping, like `sdks/skills/`):
 
