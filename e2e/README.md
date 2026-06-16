@@ -120,9 +120,10 @@ the native runners (`ubuntu-latest`, `ubuntu-24.04-arm`, `macos-latest`):
   journeys whose `#@ min-tx3c` exceeds stable's `tx3c` install **skip** (green), and start running
   automatically once the feature graduates to stable (auto-heal).
 - **`beta`** — the *edge-feature* journeys (the ones exercising features only on beta, like
-  `02-lang-tour`'s tuples), plus `04-devnet-roundtrip`. The devnet round-trip is parked on beta for
-  now: it's `xfail` on released channels until the trix expect/balance fix ships, and beta gets that
-  release first.
+  `02-lang-tour`'s tuples), plus `04-devnet-roundtrip`. The devnet round-trip currently **fails** on
+  released channels — a known, tracked trix bug, fixed on `main` but not yet released. This is
+  intentional (a real failure, not a tolerated `xfail`); the job goes green once the fix ships to
+  beta, which gets the release first.
 
 Compat lives in one place — the journey's `#@ min-tx3c` header, enforced by the runner's skip gate —
 so the workflow needs no per-cell compat config. The shared per-cell steps (install via tx3up, cache
