@@ -138,38 +138,9 @@ assertion helpers, and `run.sh` discovers it automatically.
 Planned journeys to grow coverage are tracked in
 [`plans/dx-e2e-journey-roadmap.md`](../plans/dx-e2e-journey-roadmap.md).
 
-## Findings (what this test has already surfaced)
-
-A DX test is also a friction detector. The first journey immediately found a real, reproducible
-toolchain bug:
-
-- **`trix test` balance assertions are broken (`xfail` in journey 01).** `trix test` resolves and
-  submits the scaffolded transfers fine, but its expect phase calls
-  `cshell wallet utxos "@bob"` — passing the literal `@`-prefixed placeholder instead of the
-  wallet name `bob`. The transaction path strips the `@` (`tooling/trix/src/commands/test.rs`,
-  `replace_placeholder_args`); the expect path does not
-  (`tooling/trix/src/commands/expect.rs:20`). cshell then errors with `CShell failed to get
-  wallet utxos`. Reproduces on both **stable** (trix 0.25.1) and **beta** (0.26.0). One-line fix
-  in trix: strip the leading `@` before the cshell call. The journey marks this step `xfail` with
-  that signature, so it auto-promotes to a hard failure the moment trix is fixed.
-
-- **Feature-dense compile/lower is slow.** On the `02-lang-tour` fixture, `trix build` and
-  `trix inspect tir` each take ~14s (vs. sub-second for the basic transfer). The TIR shows the
-  `source` input resolution re-embedded dozens of times — the record spread (`...source`) plus
-  repeated `source.fieldN` accesses look like they expand combinatorially in lowering. Worth a
-  profiler pass in `tx3c`/`tx3-cardano`. (The journey still passes; this is a latency observation.)
-
-Other things worth watching as journeys grow:
-
-- The `trix init` template (`tooling/trix/templates/tx3/test.toml.tpl`) is the source of truth for
-  the test shape — it matches the `Test` parser. The `tooling/trix/examples/test/` fixture uses a
-  different, non-parsing shape; don't copy from it.
-- **Time-to-first-green** — devnet startup + block intervals dominate the `trix test` step (~15s).
-- Command output strings the assertions match on (`"check passed"`, `"Dolos daemon started"`).
-
 ## Hermeticity
 
-`trix test` leaks its Dolos devnet daemon when its expect phase errors (it returns before the
-`daemon.kill()`), so the runner reaps any dolos process it spawned (matched by the run's unique
-workdir) after each journey, and warns at startup if the devnet ports (8164/5164) are already in
-use. Channel mode never runs `tx3up use`, so it never repoints your active channel.
+After each journey the runner reaps any `dolos` process it spawned (matched by the run's unique
+workdir), so a devnet daemon never outlives the journey that started it, and it warns at startup if
+the devnet ports (8164/5164) are already in use. Channel mode never runs `tx3up use`, so it never
+repoints your active channel.
