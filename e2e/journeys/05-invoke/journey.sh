@@ -36,15 +36,9 @@ for _ in $(seq 1 30); do
 done
 sleep 3
 
-# 4. Invoke the transaction — passing the fixture's full argument set — and
-#    require it to resolve to an unsigned tx. --skip-submit keeps it headless:
-#    invoke never signs without a TTY (see README), so resolve-only is the mode.
-#
-#    This currently FAILS on released channels because the toolchain can't yet
-#    bind the fixture's full argument set (resolve errors with "invalid param
-#    type"). The assertion is kept strict — an intentional red, not an xfail —
-#    so the gap stays visible and the journey goes green the moment it's fixed.
-#    Tracked in plans/invoke-arg-type-support-gap.md.
+# 4. Invoke the transaction with the fixture's full argument set and require it
+#    to resolve to an unsigned tx. --skip-submit keeps it headless: invoke never
+#    signs without a TTY (see README), so resolve-only is the mode.
 run_cmd "trix invoke — resolve the transaction" \
   "${TRIX}" invoke --skip-submit \
   --args-json "{\"sender\":\"${ALICE}\",\"receiver\":\"${BOB}\",\"quantity\":2000000,\"urgent\":true,\"memo\":\"deadbeef\",\"meta\":{\"tags\":[1,2,3],\"level\":7}}"

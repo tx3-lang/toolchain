@@ -7,11 +7,9 @@ name: DX E2E
 #   - stable: the offline scaffold gate + lang-surface journeys. Edge journeys
 #     whose `#@ min-tx3c` exceeds stable's tx3c install + skip (green), and
 #     auto-run once the feature graduates to stable.
-#   - beta: edge-feature journeys (e.g. 02-lang-tour's tuples), plus the devnet
-#     round-trip (04) and the invoke arg-type journey (05). Both currently *fail*
-#     on released channels (known, tracked trix gaps fixed on main but unreleased)
-#     — intentionally red, not tolerated xfails; each goes green once its fix
-#     ships to a channel.
+#   - beta: edge-feature and runtime journeys — tuples (02), the devnet
+#     round-trip (04), and the invoke journey (05) — that need a beta-channel
+#     install to exercise their feature.
 #
 # Compat lives in one place: the journey's `#@ min-tx3c` header, enforced by the
 # runner's skip gate. Native runners only — a DX test must exercise the real
@@ -59,9 +57,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
-        # edge-feature journeys + the devnet round-trip (04) and the invoke
-        # arg-type journey (05). 04 and 05 fail on released channels until their
-        # trix fixes ship (intentionally red, not xfails).
+        # edge-feature journeys plus the runtime journeys: the devnet
+        # round-trip (04) and invoke (05).
         journey: [02-lang-tour, 03-lang-edge, 04-devnet-roundtrip, 05-invoke]
     steps:
       - uses: actions/checkout@v4
