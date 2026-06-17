@@ -1,0 +1,48 @@
+// Single-tx invoke fixture (journey 05). Exactly one `tx` so `trix invoke`
+// auto-selects it without an interactive prompt. The transfer spends the
+// Sender's funded input, writes a datum-bearing output, and returns the change,
+// while taking a deliberately diverse set of argument types so one invoke
+// exercises the breadth of the arg surface: Int (quantity), Bool (urgent),
+// Bytes (memo), Address (sender/receiver, from the parties), and a complex
+// record (meta) that nests a parametric List<Int>.
+party Sender;
+
+party Receiver;
+
+type Meta {
+    tags: List<Int>,
+    level: Int,
+}
+
+type Payload {
+    memo: Bytes,
+    urgent: Bool,
+    meta: Meta,
+}
+
+tx transfer(
+    quantity: Int,
+    urgent: Bool,
+    memo: Bytes,
+    meta: Meta,
+) {
+    input source {
+        from: Sender,
+        min_amount: Ada(quantity) + fees,
+    }
+
+    output {
+        to: Receiver,
+        amount: Ada(quantity),
+        datum: Payload {
+            memo: memo,
+            urgent: urgent,
+            meta: meta,
+        },
+    }
+
+    output {
+        to: Sender,
+        amount: source - Ada(quantity) - fees,
+    }
+}
