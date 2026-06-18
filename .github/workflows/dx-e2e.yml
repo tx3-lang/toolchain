@@ -39,9 +39,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
+      # a cache-miss burst of concurrent `tx3up install`s trips the releases-API rate limit
+      max-parallel: 3
       matrix:
         os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
-        journey: [01-basic-init, 02-lang-tour, 03-lang-edge]   # comprehensive: every journey
+        journey: [01-basic-init, 02-lang-tour, 03-lang-edge]
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/dx-e2e-run
@@ -55,6 +57,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
+      max-parallel: 3
       matrix:
         os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
         # edge-feature journeys plus the runtime journeys: the devnet
