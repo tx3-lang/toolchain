@@ -1,13 +1,18 @@
 name: 'Run DX e2e'
-description: 'Install a toolchain channel via tx3up and run one DX e2e journey.'
+description: 'Install a toolchain channel via tx3up and run one DX e2e journey (or just warm its cache).'
 
 inputs:
   channel:
     description: 'Toolchain channel to install and test (stable, beta, …).'
     required: true
   journey:
-    description: 'Journey directory name under e2e/journeys/.'
-    required: true
+    description: 'Journey directory name under e2e/journeys/. Unused when warmup-only.'
+    required: false
+    default: ''
+  warmup-only:
+    description: "Install + cache the channel, run no journey — primes the cache so the matrix's journey cells don't cold-install the same channel concurrently and trip the releases-API rate limit."
+    required: false
+    default: 'false'
   github-token:
     description: "Token for tx3up's GitHub downloads (raises the rate limit)."
     required: false
@@ -36,14 +41,22 @@ runs:
         path: ~/.tx3/${{ inputs.channel }}
         key: tx3-${{ runner.os }}-${{ runner.arch }}-${{ inputs.channel }}-${{ hashFiles(format('manifest-{0}.json', inputs.channel)) }}
 
+    - name: Warm channel cache
+      if: inputs.warmup-only == 'true'
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: tx3up --channel "${{ inputs.channel }}" install
+
     - name: Run DX e2e
+      if: inputs.warmup-only != 'true'
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
       run: ./e2e/run.sh --channel "${{ inputs.channel }}" --journey "${{ inputs.journey }}" --no-isolate --artifacts-dir "$RUNNER_TEMP/dx-e2e-artifacts"
 
     - name: Upload artifacts on failure
-      if: failure()
+      if: failure() && inputs.warmup-only != 'true'
       uses: actions/upload-artifact@v4
       with:
         name: dx-e2e-${{ inputs.channel }}-${{ inputs.journey }}-${{ runner.os }}-${{ runner.arch }}

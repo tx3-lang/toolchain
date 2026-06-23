@@ -1,0 +1,55 @@
+name: DX E2E (stable)
+
+# A journey skips green until the channel's tx3c meets its `#@ min-tx3c` header,
+# then auto-runs — that's how a feature graduates to stable. Native runners only:
+# the test exercises the real per-platform install. Add journeys here; list
+# beta-only-feature ones in dx-e2e-beta.yml too.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'manifest-stable.json'
+      - 'e2e/**'
+      - '.github/workflows/dx-e2e-stable.yml'
+      - '.github/actions/dx-e2e-run/**'
+  workflow_dispatch:
+  schedule:
+    - cron: '0 7 * * *'          # nightly drift check
+
+permissions:
+  contents: read
+
+jobs:
+  warmup:
+    name: warmup (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/dx-e2e-run
+        with:
+          channel: stable
+          warmup-only: 'true'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  stable:
+    name: stable (${{ matrix.os }} · ${{ matrix.journey }})
+    needs: warmup
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
+        journey: [01-basic-init, 02-lang-tour, 03-lang-edge, 05-invoke]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/dx-e2e-run
+        with:
+          channel: stable
+          journey: ${{ matrix.journey }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}

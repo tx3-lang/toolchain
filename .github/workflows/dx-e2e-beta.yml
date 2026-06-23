@@ -1,0 +1,52 @@
+name: DX E2E (beta)
+
+# Runtime + edge-feature journeys that need a beta install. No cron —
+# dx-e2e-stable.yml owns the nightly drift check; see it for the `#@ min-tx3c`
+# skip gate and native-runner note.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'manifest-beta.json'
+      - 'e2e/**'
+      - '.github/workflows/dx-e2e-beta.yml'
+      - '.github/actions/dx-e2e-run/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  warmup:
+    name: warmup (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/dx-e2e-run
+        with:
+          channel: beta
+          warmup-only: 'true'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  beta:
+    name: beta (${{ matrix.os }} · ${{ matrix.journey }})
+    needs: warmup
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
+        journey: [02-lang-tour, 03-lang-edge, 04-devnet-roundtrip, 05-invoke]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/dx-e2e-run
+        with:
+          channel: beta
+          journey: ${{ matrix.journey }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
