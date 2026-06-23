@@ -43,7 +43,7 @@ jobs:
       max-parallel: 3
       matrix:
         os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
-        journey: [01-basic-init, 02-lang-tour, 03-lang-edge]
+        journey: [01-basic-init, 02-lang-tour, 03-lang-edge, 05-invoke]
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/dx-e2e-run

@@ -2,6 +2,8 @@
 #
 # Journey 05 — trix invoke. See README.md for what this covers.
 # Run via e2e/run.sh, which provides $TRIX and an isolated working directory.
+#
+#@ min-tx3c: 0.23.0
 
 source "${E2E_LIB:?E2E_LIB not set — run this journey via e2e/run.sh}"
 
