@@ -50,8 +50,35 @@ Building the parameter-type model MUST NOT fail on an unrecognized schema shape 
 
 ## Value marshalling
 
-Argument **values** are marshalled to the TRP wire format independently of the parameter-type model (the wire form is a plain JSON value; the TRP resolver performs authoritative type checking). Marshalling MUST be **generic-recursive**: scalar coercions (byte arrays → `0x`-prefixed hex, big integers → their wire encoding) MUST be applied to values nested inside lists, tuples, maps, and records, not only to top-level args. The wire value for a `list`/`tuple` is a JSON array; for a `map`/`record`/`variant` it is a JSON object.
+Argument **values** are marshalled to the TRP wire format by a single recursive walk over the parameter's resolved `ParamType` — scalars are simply the leaf cases. A **scalar leaf** renders **bare** at the top level (a plain JSON value — byte arrays → `0x`-prefixed hex, big integers → their wire encoding — that the resolver coerces via the param's flat TIR type) and **tagged** when it sits inside an aggregate (where the resolver has no element type). An **aggregate** (`list`, `tuple`, `map`, `record`, `variant`) always renders to the self-describing `TaggedArg` structural form, recursing into its elements. There is no separate "scalar path" and "complex path": one walk, where the only distinction is whether a leaf is top-level (bare) or nested (tagged).
 
-> Type-*directed* validation/encoding (using the resolved `ParamType` to validate each arg) and the variant-construction encoder are not yet required; track them in `parity-matrix.md` when added.
+### The `TaggedArg` contract
 
-*Rust reference:* `tx3_sdk::core::ArgMap`, `tx3_sdk::tii::ParamType`. *Web reference:* `web-sdk/sdk/src/core/args.ts`, `web-sdk/sdk/src/tii/paramType.ts`.
+The SDK is **authoritative** here: it walks the resolved `ParamType` (record field order, variant case index, list/tuple/map element types — all interpreted from the `.tii`) alongside the user value and emits a single-key tagged, recursive `TaggedArg` (canonical schema: `TaggedArg` in `core/trp/v1beta0/trp.json`):
+
+```
+TaggedArg :=
+  | { "int":     <number | decimal-string | 0x-hex> }   // reuse the scalar int encoding
+  | { "bool":    <bool> }
+  | { "string":  <string> }                              // untyped string leaf (map keys)
+  | { "bytes":   <hex string | BytesEnvelope> }          // reuse the scalar bytes encoding
+  | { "address": <bech32 | hex> }
+  | { "utxoRef": "<txid#index>" }
+  | { "list":    [ TaggedArg, ... ] }
+  | { "tuple":   [ TaggedArg, ... ] }
+  | { "map":     [ [TaggedArg, TaggedArg], ... ] }      // array-of-pairs (keys may be non-string)
+  | { "struct":  { "constructor": <usize>, "fields": [ TaggedArg, ... ] } }
+```
+
+Normative rules:
+
+- **Every node inside an aggregate value MUST be tagged.** The resolver has no element/field types; tags + struct field order are the only structure it sees. A top-level scalar arg MAY be sent bare (back-compat) or tagged.
+- A **record** encodes to `{ "struct": { "constructor": 0, "fields": [<fields in declared order>] } }`. The SDK maps the user's by-name object to **positional** fields ordered by the schema's `required` array — `tx3c` emits `required` in source-declaration order, whereas `properties` is alphabetized, so the field order MUST come from `required`, not from iterating `properties`.
+- A **variant** resolves the user's case to its index and encodes as that case's `struct` with `constructor` = the case index in the `.tii` `oneOf` ordering.
+- **Leaf scalar values reuse each SDK's existing scalar wire serializer**, wrapped in the leaf tag (`int`/`bool`/`bytes`/`address`/`utxoRef`).
+- The SDK SHOULD **reject before sending** any value whose shape can't match the declared `ParamType` (missing/extra record field, wrong tuple arity, unknown variant case).
+- A param the SDK can't type-direct (`unknown`, `utxo`, `anyAsset`) has no element types, so its value passes through the walk unchanged.
+
+Shared oracle: `sdk-spec/test-vectors/complex-types/wire-vectors.json` pins, per kind, the `.tii`-typed input value → its `TaggedArg`. Both the resolver decoder and every SDK encoder MUST agree with it.
+
+*Rust reference:* `tx3_sdk::core::ArgMap`, `tx3_sdk::tii::ParamType`, `tx3_sdk::tii::encode` (type-directed encoder). *Web reference:* `web-sdk/sdk/src/core/args.ts`, `web-sdk/sdk/src/tii/paramType.ts`.
