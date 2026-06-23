@@ -10,7 +10,7 @@ inputs:
     required: false
     default: ''
   warmup-only:
-    description: "Install the channel toolchain to populate its cache, then stop — run no journey. The warmup job uses this to prime each channel's cache once before the {os × journey} matrix, so journey cells hit a warm cache instead of cold-installing the same channel concurrently (which trips the releases-API rate limit)."
+    description: "Install + cache the channel, run no journey — primes the cache so the matrix's journey cells don't cold-install the same channel concurrently and trip the releases-API rate limit."
     required: false
     default: 'false'
   github-token:
