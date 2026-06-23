@@ -1,0 +1,164 @@
+{
+  "description": "Shared oracle for the argument wire encoding (TRP `TaggedArg`, see core/trp/v1beta0/trp.json). Each `accept` vector pins a `.tii`-typed parameter — its JSON `schema` (the node a ParamType is built from), the flat TIR `type` the resolver sees, the native user `value`, and the `tagged` wire form. SDK encoders MUST turn (schema, value) into `tagged`; the resolver decoder MUST turn (type, tagged) back into the matching ArgValue. `reject` vectors are values an SDK encoder MUST refuse before sending. `components` holds the user-defined record/variant schemas referenced via `#/components/schemas/<Name>`; struct field order follows each schema's `required` array (source-declaration order, which tx3c emits — note `properties` is alphabetized and MUST NOT be used for order). Map pairs are emitted sorted by the JSON key string for determinism.",
+  "components": {
+    "Meta": {
+      "type": "object",
+      "properties": {
+        "level": { "type": "integer" },
+        "tags": { "type": "array", "items": { "type": "integer" } }
+      },
+      "required": ["tags", "level"]
+    },
+    "AssetClass": {
+      "type": "object",
+      "properties": {
+        "policy": { "$ref": "https://tx3.land/specs/v1beta0/tii#/$defs/Bytes" },
+        "name": { "$ref": "https://tx3.land/specs/v1beta0/tii#/$defs/Bytes" }
+      },
+      "required": ["policy", "name"]
+    },
+    "Side": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["Buy"],
+          "properties": { "Buy": { "type": "object", "properties": {}, "required": [] } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["Sell"],
+          "properties": {
+            "Sell": {
+              "type": "object",
+              "properties": { "price": { "type": "integer" } },
+              "required": ["price"]
+            }
+          }
+        }
+      ]
+    }
+  },
+  "accept": [
+    {
+      "name": "list_of_int",
+      "schema": { "type": "array", "items": { "type": "integer" } },
+      "type": "list",
+      "value": [1, 2, 3],
+      "tagged": { "list": [{ "int": 1 }, { "int": 2 }, { "int": 3 }] }
+    },
+    {
+      "name": "list_of_bytes",
+      "schema": {
+        "type": "array",
+        "items": { "$ref": "https://tx3.land/specs/v1beta0/tii#/$defs/Bytes" }
+      },
+      "type": "list",
+      "value": ["deadbeef", "0xcafe"],
+      "tagged": { "list": [{ "bytes": "deadbeef" }, { "bytes": "0xcafe" }] }
+    },
+    {
+      "name": "empty_list",
+      "schema": { "type": "array", "items": { "type": "integer" } },
+      "type": "list",
+      "value": [],
+      "tagged": { "list": [] }
+    },
+    {
+      "name": "tuple_int_bytes",
+      "schema": {
+        "type": "array",
+        "prefixItems": [
+          { "type": "integer" },
+          { "$ref": "https://tx3.land/specs/v1beta0/tii#/$defs/Bytes" }
+        ],
+        "items": false
+      },
+      "type": "tuple",
+      "value": [42, "cafe"],
+      "tagged": { "tuple": [{ "int": 42 }, { "bytes": "cafe" }] }
+    },
+    {
+      "name": "map_int_to_int",
+      "schema": { "type": "object", "additionalProperties": { "type": "integer" } },
+      "type": "map",
+      "value": { "2": 200, "1": 100 },
+      "tagged": {
+        "map": [
+          [{ "string": "1" }, { "int": 100 }],
+          [{ "string": "2" }, { "int": 200 }]
+        ]
+      }
+    },
+    {
+      "name": "record_asset_class",
+      "schema": { "$ref": "#/components/schemas/AssetClass" },
+      "type": { "custom": "AssetClass" },
+      "value": { "name": "0011", "policy": "aabb" },
+      "tagged": {
+        "struct": { "constructor": 0, "fields": [{ "bytes": "aabb" }, { "bytes": "0011" }] }
+      }
+    },
+    {
+      "name": "variant_side_buy",
+      "schema": { "$ref": "#/components/schemas/Side" },
+      "type": { "custom": "Side" },
+      "value": { "Buy": {} },
+      "tagged": { "struct": { "constructor": 0, "fields": [] } }
+    },
+    {
+      "name": "variant_side_sell",
+      "schema": { "$ref": "#/components/schemas/Side" },
+      "type": { "custom": "Side" },
+      "value": { "Sell": { "price": 5 } },
+      "tagged": { "struct": { "constructor": 1, "fields": [{ "int": 5 }] } }
+    },
+    {
+      "name": "meta_record_nested_list",
+      "comment": "The journey-critical 05-invoke shape: a record nesting a parametric List<Int>. Field order is required = [tags, level], NOT alphabetical [level, tags].",
+      "schema": { "$ref": "#/components/schemas/Meta" },
+      "type": { "custom": "Meta" },
+      "value": { "level": 7, "tags": [1, 2, 3] },
+      "tagged": {
+        "struct": {
+          "constructor": 0,
+          "fields": [{ "list": [{ "int": 1 }, { "int": 2 }, { "int": 3 }] }, { "int": 7 }]
+        }
+      }
+    }
+  ],
+  "reject": [
+    {
+      "name": "record_missing_field",
+      "schema": { "$ref": "#/components/schemas/Meta" },
+      "value": { "tags": [1, 2, 3] },
+      "reason": "missing required field 'level'"
+    },
+    {
+      "name": "record_extra_field",
+      "schema": { "$ref": "#/components/schemas/Meta" },
+      "value": { "tags": [1, 2, 3], "level": 7, "bogus": 1 },
+      "reason": "unknown field 'bogus' not declared by the record"
+    },
+    {
+      "name": "tuple_wrong_arity",
+      "schema": {
+        "type": "array",
+        "prefixItems": [
+          { "type": "integer" },
+          { "$ref": "https://tx3.land/specs/v1beta0/tii#/$defs/Bytes" }
+        ],
+        "items": false
+      },
+      "value": [42],
+      "reason": "tuple arity 1 != declared 2"
+    },
+    {
+      "name": "variant_unknown_case",
+      "schema": { "$ref": "#/components/schemas/Side" },
+      "value": { "Nope": {} },
+      "reason": "variant case 'Nope' not declared by Side"
+    }
+  ]
+}

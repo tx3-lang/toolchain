@@ -25,3 +25,11 @@ This directory contains canonical, spec-level e2e vectors shared across all Tx3 
     `tii#/$defs/` form. Used to verify parameter-type interpretation parity
     across SDKs (see `api-surface/args.md`). The TIR envelope is a non-resolvable
     placeholder — this vector is for type-model tests, not TRP resolution.
+  - `wire-vectors.json` — the shared oracle for the argument **wire encoding**
+    (`TaggedArg`; see `api-surface/args.md` and the `TaggedArg` schema in
+    `core/trp/v1beta0/trp.json`). Each `accept` case pins a typed parameter's
+    `schema` + flat TIR `type` + native `value` → its `tagged` wire form (incl.
+    the journey-critical 05-invoke `Meta{ tags: List<Int>, level: Int }` nested
+    record); `reject` cases are values an SDK encoder must refuse. Both the
+    resolver decoder (`tx3-resolver`) and every SDK encoder validate against this
+    one file so server and client agree byte-for-byte.
