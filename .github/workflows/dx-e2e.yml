@@ -1,8 +1,10 @@
 name: DX E2E
 
-# One job per channel, each an {os × journey} matrix. The shared per-cell steps
-# (install the channel via tx3up, cache it, run one journey) live in the local
-# composite action .github/actions/dx-e2e-run.
+# A `warmup` job primes each channel's toolchain cache once per OS, then one job
+# per channel runs an {os × journey} matrix (gated on `needs: warmup`, so cells
+# start warm). The shared per-cell steps (install the channel via tx3up, cache
+# it, run one journey — or just warm the cache) live in the local composite
+# action .github/actions/dx-e2e-run.
 #
 #   - stable: the offline scaffold gate + lang-surface journeys. Edge journeys
 #     whose `#@ min-tx3c` exceeds stable's tx3c install + skip (green), and
@@ -34,8 +36,31 @@ permissions:
   contents: read
 
 jobs:
+  # Prime each channel's toolchain cache once per OS before the {os × journey}
+  # matrices run. Without this, the journey cells for a given (os, channel) share
+  # one cache key and, on a cold cache, cold-install the same channel
+  # concurrently — a thundering herd that trips the releases-API rate limit and
+  # is the main source of flake. Gating the matrices on `needs: warmup` means
+  # they start with a warm cache and skip the install entirely.
+  warmup:
+    name: warmup (${{ matrix.os }} · ${{ matrix.channel }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
+        channel: [stable, beta]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/dx-e2e-run
+        with:
+          channel: ${{ matrix.channel }}
+          warmup-only: 'true'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
   stable:
     name: stable (${{ matrix.os }} · ${{ matrix.journey }})
+    needs: warmup
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -54,6 +79,7 @@ jobs:
 
   beta:
     name: beta (${{ matrix.os }} · ${{ matrix.journey }})
+    needs: warmup
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
