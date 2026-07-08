@@ -1,0 +1,20 @@
+tx transfer(
+    sender: Address,
+    receiver: Address,
+    quantity: Int
+) {
+    input source {
+        from: sender,
+        min_amount: Ada(quantity) + fees,
+    }
+
+    output {
+        to: receiver,
+        amount: Ada(quantity),
+    }
+
+    output {
+        to: sender,
+        amount: source - Ada(quantity) - fees,
+    }
+}

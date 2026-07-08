@@ -1,0 +1,8 @@
+[trp]
+listen_address = "0.0.0.0:8164"
+permissive_cors = true
+
+[hydra]
+ws_url = "ws://hydra-node:4001"
+http_url = "http://hydra-node:4001"
+network = 0
