@@ -1,7 +1,1 @@
 .DS_Store
-.env
-.env.*
-!.env.example
-
-# Scratchpad for local demos / recordings (not tracked)
-scratchpad/
